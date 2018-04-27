@@ -3,8 +3,8 @@
 #include <glm\gtc\matrix_transform.hpp>
 
 // Boolean variables allow to show/hide the primitives
-bool renderSphere = true;
-bool renderCapsule = true;
+bool renderSphere = false;
+bool renderCapsule = false;
 bool renderParticles = false;
 bool renderCloth = false;
 bool renderCube = true;
@@ -74,6 +74,7 @@ void renderPrims() {
 	if (renderCloth)
 		ClothMesh::drawClothMesh();
 
-	if (renderCube)
+	if (renderCube){
 		MyLoadedModel::drawModel();
+	}
 }
