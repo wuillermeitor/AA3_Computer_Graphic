@@ -15,6 +15,7 @@
 //variables to load an object:
 
 #define PI  3.141592658
+#define nExercises 17
 
 glm::vec3 lightPos;
 
@@ -194,9 +195,9 @@ void GLinit(int width, int height) {
 	/*Box::setupCube();
 	Axis::setupAxis();*/
 
-	bool res = loadOBJ("Trump.obj", vertices, uvs, normals);
+	bool res = loadOBJ("trump.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 10;
+		vertices.at(i) /= 20;
 	}
 	MyLoadedModel::setupModel(0);
 
@@ -1247,13 +1248,23 @@ void main() {\n\
 		glUseProgram(cubeProgram);
 
 		const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
-		if (keyboardState[SDL_SCANCODE_A] && !GV::pressed) {
-			GV::exCounter = (GV::exCounter + 1) % 18;
-			GV::pressed = true;
+		if (keyboardState[SDL_SCANCODE_A]) {
+			if (!GV::pressed) {
+				GV::pressed = true;
+				if (GV::exCounter == nExercises)
+					GV::exCounter = 1;
+				else
+					GV::exCounter++;
+			}
 		}
-		else if (keyboardState[SDL_SCANCODE_Z] && !GV::pressed) {
-			GV::exCounter = (GV::exCounter - 1) % 18;
-			GV::pressed = true;
+		else if (keyboardState[SDL_SCANCODE_Z]) {
+			if (!GV::pressed) {
+				GV::pressed = true;
+				if (GV::exCounter == 1)
+					GV::exCounter = nExercises;
+				else
+					GV::exCounter--;
+			}
 		}
 		else
 			GV::pressed = false;
@@ -1272,7 +1283,7 @@ void main() {\n\
 				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
 				if(i==0)
 					MyLoadedModel::updateModel(myObjMat, 0);
-				myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(1, 1, 1));
+				myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(2, 2, 2));
 				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
 				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
