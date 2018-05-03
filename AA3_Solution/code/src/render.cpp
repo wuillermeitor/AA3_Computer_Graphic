@@ -3,6 +3,7 @@
 #include <glm\gtc\matrix_transform.hpp>
 #include <cstdio>
 #include <cassert>
+#include <SDL.h>
 
 #include "GL_framework.h"
 #include <vector>
@@ -13,10 +14,7 @@
 
 //variables to load an object:
 
-std::vector< glm::vec3 > vertices;
-std::vector< glm::vec2 > uvs;
-std::vector< glm::vec3 > normals;
-
+#define PI  3.141592658
 
 glm::vec3 lightPos;
 
@@ -27,7 +25,35 @@ extern bool loadOBJ(const char * path,
 	std::vector < glm::vec3 > & out_normals
 );
 
+namespace globalVariables {
+	int exCounter = 1;
+	bool pressed=false;
+}
+namespace GV = globalVariables;
 
+namespace shaders {
+	int nCabinas=20;
+	float rCabinas=30.f;
+}
+
+
+std::vector< glm::vec3 > vertices;
+std::vector< glm::vec2 > uvs;
+std::vector< glm::vec3 > normals;
+
+namespace trump {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
+
+namespace chicken {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
 
 bool show_test_window = false;
 
@@ -46,6 +72,7 @@ void GUI() {
 			light_moves = !light_moves;
 
 		}
+		ImGui::Text("Current Exercise: %d", GV::exCounter);
 
 
 	}
@@ -76,10 +103,10 @@ void drawAxis();
 }
 
 namespace MyLoadedModel {
-	void setupModel();
-	void cleanupModel();
-	void updateModel(const glm::mat4& transform);
-	void drawModel();
+	void setupModel(int model);
+	void cleanupModel(int model);
+	void updateModel(const glm::mat4& transform, int model);
+	void drawModel(int model);
 }
 
 namespace Sphere {
@@ -116,7 +143,7 @@ namespace RenderVars {
 		bool waspressed = false;
 	} prevMouse;
 
-	float panv[3] = { 0.f, -20.f, -50.f };
+	float panv[3] = { 0.f, -0.f, -0.f };
 	float rota[2] = { 0.f, 0.f };
 }
 namespace RV = RenderVars;
@@ -171,7 +198,20 @@ void GLinit(int width, int height) {
 	for (int i = 0; i < vertices.size(); ++i) {
 		vertices.at(i) /= 10;
 	}
-	MyLoadedModel::setupModel();
+	MyLoadedModel::setupModel(0);
+
+	vertices.clear();
+	vertices.shrink_to_fit();
+	normals.clear();
+	normals.shrink_to_fit();
+	uvs.clear();
+	uvs.shrink_to_fit();
+
+	res = loadOBJ("chicken.obj", vertices, uvs, normals);
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices.at(i) /= 10;
+	}
+	MyLoadedModel::setupModel(1);
 
 	lightPos =  glm::vec3(40, 40, 0);
 
@@ -187,7 +227,8 @@ void GLinit(int width, int height) {
 void GLcleanup() {
 	/*Box::cleanupCube();
 	Axis::cleanupAxis();*/
-	MyLoadedModel::cleanupModel();
+	MyLoadedModel::cleanupModel(0);
+	MyLoadedModel::cleanupModel(1);
 	Sphere::cleanupSphere();
 	Cube::cleanupCube();
 
@@ -197,23 +238,26 @@ void GLcleanup() {
 void GLrender(double currentTime) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	RV::_modelView = glm::mat4(1.f);
+	/*RV::_modelView = glm::mat4(1.f);
 	RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
 	RV::_modelView = glm::rotate(RV::_modelView, RV::rota[1], glm::vec3(1.f, 0.f, 0.f));
 	RV::_modelView = glm::rotate(RV::_modelView, RV::rota[0], glm::vec3(0.f, 1.f, 0.f));
 
-	RV::_MVP = RV::_projection * RV::_modelView;
+	RV::_MVP = RV::_projection * RV::_modelView;*/
 
 	// render code
 	/*Box::drawCube();
 	Axis::drawAxis();*/
+
+	const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
 
 	if(light_moves)
 		lightPos = glm::vec3(40 * cos((float)currentTime),40 * sin((float)currentTime), 0);
 
 	Sphere::updateSphere(lightPos, 1.0f);
 	Sphere::drawSphere();
-	MyLoadedModel::drawModel();
+	MyLoadedModel::drawModel(0);
+	MyLoadedModel::drawModel(1);
 	Cube::drawCube(currentTime);
 	
 
@@ -916,11 +960,10 @@ void drawClothMesh() {
 
 ////////////////////////////////////////////////// MyModel
 namespace MyLoadedModel {
-	GLuint modelVao;
-	GLuint modelVbo[3];
+	
+
 	GLuint modelShaders[2];
 	GLuint modelProgram;
-	glm::mat4 objMat = glm::mat4(1.f);
 
 
 	
@@ -957,23 +1000,43 @@ namespace MyLoadedModel {
 			out_Color = vec4(color.xyz * U , 1.0 );\n\
 			\n\
 		}";
-	void setupModel() {
-		glGenVertexArrays(1, &modelVao);
-		glBindVertexArray(modelVao);
-		glGenBuffers(3, modelVbo);
+	void setupModel(int model) {
+		switch (model) {
+		case 0:
+			glGenVertexArrays(1, &trump::modelVao);
+			glBindVertexArray(trump::modelVao);
+			glGenBuffers(3, trump::modelVbo);
 
-		glBindBuffer(GL_ARRAY_BUFFER, modelVbo[0]);
-		
-		glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
-		glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(0);
+			glBindBuffer(GL_ARRAY_BUFFER, trump::modelVbo[0]);
 
-		glBindBuffer(GL_ARRAY_BUFFER, modelVbo[1]);
-	
-		glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
-		glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		glEnableVertexAttribArray(1);
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
 
+			glBindBuffer(GL_ARRAY_BUFFER, trump::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
+		case 1:
+			glGenVertexArrays(1, &chicken::modelVao);
+			glBindVertexArray(chicken::modelVao);
+			glGenBuffers(3, chicken::modelVbo);
+
+			glBindBuffer(GL_ARRAY_BUFFER, chicken::modelVbo[0]);
+
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, chicken::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
+		}
 	
 
 		glBindVertexArray(0);
@@ -990,23 +1053,44 @@ namespace MyLoadedModel {
 		glBindAttribLocation(modelProgram, 1, "in_Normal");
 		linkProgram(modelProgram);
 	}
-	void cleanupModel() {
-	
-		glDeleteBuffers(2, modelVbo);
-		glDeleteVertexArrays(1, &modelVao);
-
+	void cleanupModel(int model) {
+		switch (model) {
+		case 0:
+			glDeleteBuffers(2, trump::modelVbo);
+			glDeleteVertexArrays(1, &trump::modelVao);
+			break;
+		case 1:
+			glDeleteBuffers(2, chicken::modelVbo);
+			glDeleteVertexArrays(1, &chicken::modelVao);
+			break;
+		}
 		glDeleteProgram(modelProgram);
 		glDeleteShader(modelShaders[0]);
 		glDeleteShader(modelShaders[1]);
 	}
-	void updateModel(const glm::mat4& transform) {
-		objMat = transform;
+	void updateModel(const glm::mat4& transform, int model) {
+		switch (model) {
+		case 0:
+			trump::objMat = transform;
+			break;
+		case 1:
+			chicken::objMat = transform;
+			break;
+		}
 	}
-	void drawModel() {
-	
-		glBindVertexArray(modelVao);
-		glUseProgram(modelProgram);
-		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(objMat));
+	void drawModel(int model) {
+		switch (model) {
+		case 0:
+			glBindVertexArray(trump::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(trump::objMat));
+			break;
+		case 1:
+			glBindVertexArray(chicken::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(chicken::objMat));
+			break;
+		}
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
 		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), lightPos.x, lightPos.y, lightPos.z);
@@ -1162,15 +1246,52 @@ void main() {\n\
 		glBindVertexArray(cubeVao);
 		glUseProgram(cubeProgram);
 
-		glm::vec3 posiciones = { 5 * cos((float)2 * 3.141592658f * 0.1* currentTime + 3.141592658f/2), 5 * cos((float)2 * 3.141592658f * 0.1 *currentTime + 3.141592658f/2), 0.f };
-		glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3 (posiciones.x, posiciones.y, posiciones.z));
+		const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
+		if (keyboardState[SDL_SCANCODE_A] && !GV::pressed) {
+			GV::exCounter = (GV::exCounter + 1) % 18;
+			GV::pressed = true;
+		}
+		else if (keyboardState[SDL_SCANCODE_Z] && !GV::pressed) {
+			GV::exCounter = (GV::exCounter - 1) % 18;
+			GV::pressed = true;
+		}
+		else
+			GV::pressed = false;
 
-		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
-		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
-		glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
-		glUniform1f(glGetUniformLocation(cubeProgram, "radius"), Cube::halfW);
-		glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
-		glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
+		switch (GV::exCounter) {
+		case 1: {
+			RV::_modelView = glm::mat4(1.f);
+			RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, -10, -80));
+			//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
+			RV::_modelView = glm::rotate(RV::_modelView, static_cast<float>(((2 * PI) / 360.f)*30.f), glm::vec3(1.f, 0.f, 0.f));
+			RV::_MVP = RV::_projection*RV::_modelView;
+			
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 
+										 shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
+				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
+				if(i==0)
+					MyLoadedModel::updateModel(myObjMat, 0);
+				myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(1, 1, 1));
+				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
+				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
+				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
+				glUniform1f(glGetUniformLocation(cubeProgram, "radius"), Cube::halfW*20);
+				glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
+				glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
+			}
+		}
+			break;
+		case 2:
+			break;
+		case 3:
+			break;
+		case 4:
+			break;
+		}
+		
+		
+		
 
 		glUseProgram(0);
 		glBindVertexArray(0);
