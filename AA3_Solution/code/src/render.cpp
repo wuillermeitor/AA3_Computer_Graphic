@@ -223,7 +223,7 @@ void GLinit(int width, int height) {
 
 	bool res = loadOBJ("trump.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 20;
+		vertices.at(i) /= 30;
 	}
 	MyLoadedModel::setupModel(0);
 
@@ -236,7 +236,7 @@ void GLinit(int width, int height) {
 
 	res = loadOBJ("chicken.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 10;
+		vertices.at(i) /= 20;
 	}
 	MyLoadedModel::setupModel(1);
 
@@ -249,7 +249,7 @@ void GLinit(int width, int height) {
 
 	res = loadOBJ("NoriaCabina.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 600;
+		vertices.at(i) /= 600/4;
 	}
 	MyLoadedModel::setupModel(2);
 
@@ -262,7 +262,7 @@ void GLinit(int width, int height) {
 
 	res = loadOBJ("NoriaFeet.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 90;
+		vertices.at(i) /= 45;
 	}
 	MyLoadedModel::setupModel(3);
 	lightPos =  glm::vec3(40, 40, 0);
@@ -276,7 +276,7 @@ void GLinit(int width, int height) {
 
 	res = loadOBJ("NoriaRueda.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 90;
+		vertices.at(i) /= 45;
 	}
 	MyLoadedModel::setupModel(4);
 
@@ -319,8 +319,12 @@ void GLrender(double currentTime) {
 	case 1:
 		break;
 	case 2:
-		GV::modelColor = { 0.8, 0.12, 0.07, 0 };
+		GV::modelColor = { 0.98, 0.1, 0.86, 0 };
 		MyLoadedModel::drawModel(1);
+		GV::modelColor = { 0.04, 0.78, 1, 0 };
+		MyLoadedModel::drawModel(0);
+
+		GV::modelColor = { 0.8, 0.12, 0.07, 0 };
 		MyLoadedModel::drawModel(3);
 		MyLoadedModel::drawModel(4);
 		for (int i = 0; i < shaders::nCabinas; ++i) {
@@ -329,6 +333,22 @@ void GLrender(double currentTime) {
 		GV::modelColor = { 0.04, 0.78, 1, 0 };
 		MyLoadedModel::drawModel(0);
 		
+		break;
+	case 3:
+		GV::modelColor = { 0.98, 0.1, 0.86, 0 };
+		MyLoadedModel::drawModel(1);
+		GV::modelColor = { 0.04, 0.78, 1, 0 };
+		MyLoadedModel::drawModel(0);
+
+		GV::modelColor = { 0.8, 0.12, 0.07, 0 };
+		MyLoadedModel::drawModel(3);
+		MyLoadedModel::drawModel(4);
+		for (int i = 0; i < shaders::nCabinas; ++i) {
+			MyLoadedModel::drawModel(2, i);
+		}
+		GV::modelColor = { 0.04, 0.78, 1, 0 };
+		MyLoadedModel::drawModel(0);
+
 		break;
 	}
 
@@ -1263,7 +1283,7 @@ namespace MyLoadedModel {
 		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), lightPos.x, lightPos.y, lightPos.z);
 		glUniform4f(glGetUniformLocation(modelProgram, "color"), GV::modelColor.x, GV::modelColor.y, GV::modelColor.z, GV::modelColor.a);
 	
-		glDrawArrays(GL_TRIANGLES, 0, 15000);
+		glDrawArrays(GL_TRIANGLES, 0, 25000);
 
 
 		glUseProgram(0);
@@ -1468,19 +1488,56 @@ void main() {\n\
 				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
 					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
 				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
-				myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
 				MyLoadedModel::updateModel(myObjMat, 2, i);
 
 				if (i == 0) {
-					myObjMat*= glm::scale(glm::mat4(1.0f), glm::vec3(0.15, 0.15, 0.15));
-					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, -3, 0));
+					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
+					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
 					MyLoadedModel::updateModel(myObjMat, 0);
+					 
+
+					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
+					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
+					MyLoadedModel::updateModel(myObjMat, 1);
+
+					glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
+					myNoriaMat*= glm::rotate(glm::mat4(1.f), glm::radians(currentTime*-36), glm::vec3(1, 0, 0));
+					MyLoadedModel::updateModel(myNoriaMat, 4);
 				}
 			}
-				
 		}
 			break;
-		case 3:
+		case 3: {
+			RV::_modelView = glm::mat4(1.f);
+			//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
+			
+
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
+					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
+				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
+				MyLoadedModel::updateModel(myObjMat, 2, i);
+
+				if (i == shaders::nCabinas/2) {
+					RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(-0, 0, -10)) * myObjMat;
+					RV::_MVP = RV::_projection*RV::_modelView;
+				}
+				if (i == 0) {
+					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
+					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
+					MyLoadedModel::updateModel(myObjMat, 0);
+
+
+					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
+					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
+					MyLoadedModel::updateModel(myObjMat, 1);
+
+					glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
+					myNoriaMat *= glm::rotate(glm::mat4(1.f), glm::radians(currentTime*-36), glm::vec3(1, 0, 0));
+					MyLoadedModel::updateModel(myNoriaMat, 4);
+				}
+			}
+		}
 			break;
 		case 4:
 			break;
