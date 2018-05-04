@@ -29,6 +29,7 @@ extern bool loadOBJ(const char * path,
 namespace globalVariables {
 	int exCounter = 1;
 	bool pressed=false;
+	glm::vec4 modelColor;
 }
 namespace GV = globalVariables;
 
@@ -50,6 +51,27 @@ namespace trump {
 }
 
 namespace chicken {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
+
+namespace cabina {
+	GLuint* modelVao=new GLuint[shaders::nCabinas];
+	GLuint* modelVbo=new GLuint[shaders::nCabinas *3];
+
+	glm::mat4* objMat = new glm::mat4[shaders::nCabinas];
+}
+
+namespace pata {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
+
+namespace noria {
 	GLuint modelVao;
 	GLuint modelVbo[3];
 
@@ -106,8 +128,8 @@ void drawAxis();
 namespace MyLoadedModel {
 	void setupModel(int model);
 	void cleanupModel(int model);
-	void updateModel(const glm::mat4& transform, int model);
-	void drawModel(int model);
+	void updateModel(const glm::mat4& transform, int model, int cabina=0);
+	void drawModel(int model, int cabina=0);
 }
 
 namespace Sphere {
@@ -195,6 +217,10 @@ void GLinit(int width, int height) {
 	/*Box::setupCube();
 	Axis::setupAxis();*/
 
+	for (int i = 0; i < shaders::nCabinas; ++i) {
+		cabina::objMat[i] = glm::mat4(1.f);
+	}
+
 	bool res = loadOBJ("trump.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
 		vertices.at(i) /= 20;
@@ -214,14 +240,48 @@ void GLinit(int width, int height) {
 	}
 	MyLoadedModel::setupModel(1);
 
+	vertices.clear();
+	vertices.shrink_to_fit();
+	normals.clear();
+	normals.shrink_to_fit();
+	uvs.clear();
+	uvs.shrink_to_fit();
+
+	res = loadOBJ("NoriaCabina.obj", vertices, uvs, normals);
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices.at(i) /= 600;
+	}
+	MyLoadedModel::setupModel(2);
+
+	vertices.clear();
+	vertices.shrink_to_fit();
+	normals.clear();
+	normals.shrink_to_fit();
+	uvs.clear();
+	uvs.shrink_to_fit();
+
+	res = loadOBJ("NoriaFeet.obj", vertices, uvs, normals);
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices.at(i) /= 90;
+	}
+	MyLoadedModel::setupModel(3);
 	lightPos =  glm::vec3(40, 40, 0);
+
+	vertices.clear();
+	vertices.shrink_to_fit();
+	normals.clear();
+	normals.shrink_to_fit();
+	uvs.clear();
+	uvs.shrink_to_fit();
+
+	res = loadOBJ("NoriaRueda.obj", vertices, uvs, normals);
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices.at(i) /= 90;
+	}
+	MyLoadedModel::setupModel(4);
 
 	Sphere::setupSphere(lightPos, 1.0f);
 	Cube::setupCube();
-
-
-
-
 
 }
 
@@ -255,10 +315,25 @@ void GLrender(double currentTime) {
 	if(light_moves)
 		lightPos = glm::vec3(40 * cos((float)currentTime),40 * sin((float)currentTime), 0);
 
+	switch (GV::exCounter) {
+	case 1:
+		break;
+	case 2:
+		GV::modelColor = { 0.8, 0.12, 0.07, 0 };
+		MyLoadedModel::drawModel(1);
+		MyLoadedModel::drawModel(3);
+		MyLoadedModel::drawModel(4);
+		for (int i = 0; i < shaders::nCabinas; ++i) {
+			MyLoadedModel::drawModel(2, i);
+		}
+		GV::modelColor = { 0.04, 0.78, 1, 0 };
+		MyLoadedModel::drawModel(0);
+		
+		break;
+	}
+
 	Sphere::updateSphere(lightPos, 1.0f);
 	Sphere::drawSphere();
-	MyLoadedModel::drawModel(0);
-	MyLoadedModel::drawModel(1);
 	Cube::drawCube(currentTime);
 	
 
@@ -994,9 +1069,9 @@ namespace MyLoadedModel {
 		uniform vec4 color;\n\
 		void main() {\n\
 			float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
-			if(U<0.2) U=0;\n\
-			else if(U>=0.2 && U<0.4) U=0.2;\n\
-			else if(U>=0.4 && U<0.5) U=0.4;\n\
+			if(U<0.2) U=0.2;\n\
+			else if(U>=0.2 && U<0.4) U=0.4;\n\
+			else if(U>=0.4 && U<0.5) U=0.6;\n\
 			else if(U>=0.5) U=1;\n\
 			out_Color = vec4(color.xyz * U , 1.0 );\n\
 			\n\
@@ -1037,6 +1112,59 @@ namespace MyLoadedModel {
 			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 			glEnableVertexAttribArray(1);
 			break;
+		case 2:
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glGenVertexArrays(1, &cabina::modelVao[i]);
+				glBindVertexArray(cabina::modelVao[i]);
+				glGenBuffers(3, &cabina::modelVbo[i*3]);
+
+				glBindBuffer(GL_ARRAY_BUFFER, cabina::modelVbo[i*3]);
+
+				glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+				glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+				glEnableVertexAttribArray(0);
+
+				glBindBuffer(GL_ARRAY_BUFFER, cabina::modelVbo[i*3+1]);
+
+				glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+				glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+				glEnableVertexAttribArray(1);
+			}
+			break;
+		case 3:
+			glGenVertexArrays(1, &pata::modelVao);
+			glBindVertexArray(pata::modelVao);
+			glGenBuffers(3, pata::modelVbo);
+
+			glBindBuffer(GL_ARRAY_BUFFER, pata::modelVbo[0]);
+
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, pata::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
+		case 4:
+			glGenVertexArrays(1, &noria::modelVao);
+			glBindVertexArray(noria::modelVao);
+			glGenBuffers(3, noria::modelVbo);
+
+			glBindBuffer(GL_ARRAY_BUFFER, noria::modelVbo[0]);
+
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, noria::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
 		}
 	
 
@@ -1064,12 +1192,26 @@ namespace MyLoadedModel {
 			glDeleteBuffers(2, chicken::modelVbo);
 			glDeleteVertexArrays(1, &chicken::modelVao);
 			break;
+		case 2:
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glDeleteBuffers(2, &cabina::modelVbo[i*3]);
+				glDeleteVertexArrays(1, &cabina::modelVao[i]);
+			}
+			break;
+		case 3:
+			glDeleteBuffers(2, pata::modelVbo);
+			glDeleteVertexArrays(1, &pata::modelVao);
+			break;
+		case 4:
+			glDeleteBuffers(2, noria::modelVbo);
+			glDeleteVertexArrays(1, &noria::modelVao);
+			break;
 		}
 		glDeleteProgram(modelProgram);
 		glDeleteShader(modelShaders[0]);
 		glDeleteShader(modelShaders[1]);
 	}
-	void updateModel(const glm::mat4& transform, int model) {
+	void updateModel(const glm::mat4& transform, int model, int cabina) {
 		switch (model) {
 		case 0:
 			trump::objMat = transform;
@@ -1077,9 +1219,18 @@ namespace MyLoadedModel {
 		case 1:
 			chicken::objMat = transform;
 			break;
+		case 2:
+			cabina::objMat[cabina] = transform;
+			break;
+		case 3:
+			pata::objMat = transform;
+			break;
+		case 4:
+			noria::objMat = transform;
+			break;
 		}
 	}
-	void drawModel(int model) {
+	void drawModel(int model, int cabina) {
 		switch (model) {
 		case 0:
 			glBindVertexArray(trump::modelVao);
@@ -1091,13 +1242,28 @@ namespace MyLoadedModel {
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(chicken::objMat));
 			break;
+		case 2:
+			glBindVertexArray(cabina::modelVao[cabina]);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(cabina::objMat[cabina]));
+			break;
+		case 3:
+			glBindVertexArray(pata::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(pata::objMat));
+			break;
+		case 4:
+			glBindVertexArray(noria::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(noria::objMat));
+			break;
 		}
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
 		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), lightPos.x, lightPos.y, lightPos.z);
-		glUniform4f(glGetUniformLocation(modelProgram, "color"), 0.f, 1.f, 0.f, 0.f);
+		glUniform4f(glGetUniformLocation(modelProgram, "color"), GV::modelColor.x, GV::modelColor.y, GV::modelColor.z, GV::modelColor.a);
 	
-		glDrawArrays(GL_TRIANGLES, 0, 10000);
+		glDrawArrays(GL_TRIANGLES, 0, 15000);
 
 
 		glUseProgram(0);
@@ -1281,9 +1447,7 @@ void main() {\n\
 				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 
 										 shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
 				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
-				if(i==0)
-					MyLoadedModel::updateModel(myObjMat, 0);
-				myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(2, 2, 2));
+				myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
 				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
 				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
@@ -1293,7 +1457,28 @@ void main() {\n\
 			}
 		}
 			break;
-		case 2:
+		case 2: {
+			RV::_modelView = glm::mat4(1.f);
+			RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, -10, -80));
+			//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
+			RV::_modelView = glm::rotate(RV::_modelView, static_cast<float>(((2 * PI) / 360.f)*30.f), glm::vec3(1.f, 0.f, 0.f));
+			RV::_MVP = RV::_projection*RV::_modelView;
+
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
+					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
+				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
+				myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
+				MyLoadedModel::updateModel(myObjMat, 2, i);
+
+				if (i == 0) {
+					myObjMat*= glm::scale(glm::mat4(1.0f), glm::vec3(0.15, 0.15, 0.15));
+					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, -3, 0));
+					MyLoadedModel::updateModel(myObjMat, 0);
+				}
+			}
+				
+		}
 			break;
 		case 3:
 			break;
