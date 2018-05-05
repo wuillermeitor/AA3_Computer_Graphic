@@ -223,7 +223,7 @@ void GLinit(int width, int height) {
 
 	bool res = loadOBJ("trump.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 30;
+		vertices.at(i) /= 80;
 	}
 	MyLoadedModel::setupModel(0);
 
@@ -236,7 +236,7 @@ void GLinit(int width, int height) {
 
 	res = loadOBJ("chicken.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 20;
+		vertices.at(i) /= 60;
 	}
 	MyLoadedModel::setupModel(1);
 
@@ -249,7 +249,7 @@ void GLinit(int width, int height) {
 
 	res = loadOBJ("NoriaCabina.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 600/4;
+		vertices.at(i) /= 180;
 	}
 	MyLoadedModel::setupModel(2);
 
@@ -262,10 +262,9 @@ void GLinit(int width, int height) {
 
 	res = loadOBJ("NoriaFeet.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 45;
+		vertices.at(i) /= 92.5f;
 	}
 	MyLoadedModel::setupModel(3);
-	lightPos =  glm::vec3(40, 40, 0);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -276,12 +275,13 @@ void GLinit(int width, int height) {
 
 	res = loadOBJ("NoriaRueda.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 45;
+		vertices.at(i) /= 92.5f;
 	}
 	MyLoadedModel::setupModel(4);
 
 	Sphere::setupSphere(lightPos, 1.0f);
 	Cube::setupCube();
+	lightPos = glm::vec3(40, 40, 0);
 
 }
 
@@ -1481,27 +1481,30 @@ void main() {\n\
 			RV::_modelView = glm::mat4(1.f);
 			RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, -10, -80));
 			//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
-			RV::_modelView = glm::rotate(RV::_modelView, static_cast<float>(((2 * PI) / 360.f)*30.f), glm::vec3(1.f, 0.f, 0.f));
+			//RV::_modelView = glm::rotate(RV::_modelView, static_cast<float>(((2 * PI) / 360.f)*30.f), glm::vec3(1.f, 0.f, 0.f));
+			RV::_modelView = glm::rotate(RV::_modelView, glm::radians(30.f), glm::vec3(1.f, 0.f, 0.f));
 			RV::_MVP = RV::_projection*RV::_modelView;
 
 			for (int i = 0; i < shaders::nCabinas; ++i) {
+				//CABINAS
 				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
-					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
+				shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
 				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
 				MyLoadedModel::updateModel(myObjMat, 2, i);
 
 				if (i == 0) {
+					//TRUMP
 					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
 					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
 					MyLoadedModel::updateModel(myObjMat, 0);
 					 
-
+					//GALLINA
 					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
 					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
 					MyLoadedModel::updateModel(myObjMat, 1);
 
-					glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
-					myNoriaMat*= glm::rotate(glm::mat4(1.f), glm::radians(currentTime*-36), glm::vec3(1, 0, 0));
+					//RUEDA NORIA
+					glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime*36), glm::vec3(0, 0, 1));
 					MyLoadedModel::updateModel(myNoriaMat, 4);
 				}
 			}
@@ -1509,6 +1512,7 @@ void main() {\n\
 			break;
 		case 3: {
 			RV::_modelView = glm::mat4(1.f);
+			RV::_modelView = glm::rotate(RV::_modelView, glm::radians(20.f), glm::vec3(1.f, 0.f, 0.f));
 			//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
 			
 
@@ -1519,21 +1523,22 @@ void main() {\n\
 				MyLoadedModel::updateModel(myObjMat, 2, i);
 
 				if (i == shaders::nCabinas/2) {
-					RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(-0, 0, -10)) * myObjMat;
+					RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)) * myObjMat;
 					RV::_MVP = RV::_projection*RV::_modelView;
 				}
 				if (i == 0) {
+					//TRUMP
 					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
 					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
 					MyLoadedModel::updateModel(myObjMat, 0);
 
-
+					//GALLINA
 					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
 					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
 					MyLoadedModel::updateModel(myObjMat, 1);
 
-					glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
-					myNoriaMat *= glm::rotate(glm::mat4(1.f), glm::radians(currentTime*-36), glm::vec3(1, 0, 0));
+					//RUEDA NORIA
+					glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
 					MyLoadedModel::updateModel(myNoriaMat, 4);
 				}
 			}
