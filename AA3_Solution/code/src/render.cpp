@@ -4,6 +4,7 @@
 #include <cstdio>
 #include <cassert>
 #include <SDL.h>
+#include <iostream>
 
 #include "GL_framework.h"
 #include <vector>
@@ -28,7 +29,8 @@ extern bool loadOBJ(const char * path,
 
 namespace globalVariables {
 	int exCounter = 1;
-	bool pressed=false;
+	bool models = true;
+	bool pressed = false;
 	glm::vec4 modelColor;
 }
 namespace GV = globalVariables;
@@ -319,35 +321,53 @@ void GLrender(double currentTime) {
 	case 1:
 		break;
 	case 2:
-		GV::modelColor = { 0.98, 0.1, 0.86, 0 };
-		MyLoadedModel::drawModel(1);
-		GV::modelColor = { 0.04, 0.78, 1, 0 };
-		MyLoadedModel::drawModel(0);
+		if (GV::models) {
+			//TRUMP
+			GV::modelColor = { 0.04, 0.78, 1, 0 };
+			MyLoadedModel::drawModel(0);
+			//GALLINA
+			GV::modelColor = { 0.98, 0.1, 0.86, 0 };
+			MyLoadedModel::drawModel(1);
 
-		GV::modelColor = { 0.8, 0.12, 0.07, 0 };
-		MyLoadedModel::drawModel(3);
-		MyLoadedModel::drawModel(4);
-		for (int i = 0; i < shaders::nCabinas; ++i) {
-			MyLoadedModel::drawModel(2, i);
+			//NORIA
+			GV::modelColor = { 0.8, 0.12, 0.07, 0 };
+			MyLoadedModel::drawModel(3);
+			MyLoadedModel::drawModel(4);
+
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				MyLoadedModel::drawModel(2, i);
+			}
 		}
-		GV::modelColor = { 0.04, 0.78, 1, 0 };
-		MyLoadedModel::drawModel(0);
+		else {
+			for (int i = 0; i < 5; ++i) {
+				MyLoadedModel::cleanupModel(i);
+			}
+		}
 		
 		break;
 	case 3:
-		GV::modelColor = { 0.98, 0.1, 0.86, 0 };
-		MyLoadedModel::drawModel(1);
-		GV::modelColor = { 0.04, 0.78, 1, 0 };
-		MyLoadedModel::drawModel(0);
+		if (GV::models) {
+			//TRUMP
+			GV::modelColor = { 0.04, 0.78, 1, 0 };
+			MyLoadedModel::drawModel(0);
+			//GALLINA
+			GV::modelColor = { 0.98, 0.1, 0.86, 0 };
+			MyLoadedModel::drawModel(1);
 
-		GV::modelColor = { 0.8, 0.12, 0.07, 0 };
-		MyLoadedModel::drawModel(3);
-		MyLoadedModel::drawModel(4);
-		for (int i = 0; i < shaders::nCabinas; ++i) {
-			MyLoadedModel::drawModel(2, i);
+			//NORIA
+			GV::modelColor = { 0.8, 0.12, 0.07, 0 };
+			MyLoadedModel::drawModel(3);
+			MyLoadedModel::drawModel(4);
+
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				MyLoadedModel::drawModel(2, i);
+			}
 		}
-		GV::modelColor = { 0.04, 0.78, 1, 0 };
-		MyLoadedModel::drawModel(0);
+		else {
+			for (int i = 0; i < 5; ++i) {
+				MyLoadedModel::cleanupModel(i);
+			}
+		}
 
 		break;
 	}
@@ -1452,6 +1472,12 @@ void main() {\n\
 					GV::exCounter--;
 			}
 		}
+		else if (keyboardState[SDL_SCANCODE_M]) {
+			if (!GV::pressed) {
+				GV::pressed = true;
+				GV::models = !GV::models;
+			}
+		}
 		else
 			GV::pressed = false;
 
@@ -1464,16 +1490,16 @@ void main() {\n\
 			RV::_MVP = RV::_projection*RV::_modelView;
 			
 			for (int i = 0; i < shaders::nCabinas; ++i) {
-				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 
-										 shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
-				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
-				myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
-				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
-				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
-				glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
-				glUniform1f(glGetUniformLocation(cubeProgram, "radius"), Cube::halfW*20);
-				glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
-				glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
+					glm::vec3 posiciones = {	shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
+												shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
+					glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
+					myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
+					glUniform1f(glGetUniformLocation(cubeProgram, "radius"), Cube::halfW * 20);
+					glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
+					glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
 			}
 		}
 			break;
@@ -1486,26 +1512,38 @@ void main() {\n\
 			RV::_MVP = RV::_projection*RV::_modelView;
 
 			for (int i = 0; i < shaders::nCabinas; ++i) {
-				//CABINAS
 				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
-				shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
+					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
 				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
-				MyLoadedModel::updateModel(myObjMat, 2, i);
+				if (GV::models) {
+					//CABINAS
+					MyLoadedModel::updateModel(myObjMat, 2, i);
 
-				if (i == 0) {
-					//TRUMP
-					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
-					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
-					MyLoadedModel::updateModel(myObjMat, 0);
-					 
-					//GALLINA
-					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
-					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
-					MyLoadedModel::updateModel(myObjMat, 1);
+					if (i == 0) {
+						//TRUMP
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
+						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 0);
 
-					//RUEDA NORIA
-					glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime*36), glm::vec3(0, 0, 1));
-					MyLoadedModel::updateModel(myNoriaMat, 4);
+						//GALLINA
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
+						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 1);
+
+						//RUEDA NORIA
+						glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
+						MyLoadedModel::updateModel(myNoriaMat, 4);
+					}
+				}
+				else {
+					//CUBOS
+					myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
+					glUniform1f(glGetUniformLocation(cubeProgram, "radius"), Cube::halfW * 20);
+					glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
+					glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
 				}
 			}
 		}
@@ -1517,29 +1555,44 @@ void main() {\n\
 			
 
 			for (int i = 0; i < shaders::nCabinas; ++i) {
-				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
-					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
+				glm::vec3 posiciones = {	shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
+											shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
 				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
-				MyLoadedModel::updateModel(myObjMat, 2, i);
 
-				if (i == shaders::nCabinas/2) {
+				//CÁMARA
+				if (i == shaders::nCabinas / 2) {
 					RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)) * myObjMat;
 					RV::_MVP = RV::_projection*RV::_modelView;
 				}
-				if (i == 0) {
-					//TRUMP
-					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
-					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
-					MyLoadedModel::updateModel(myObjMat, 0);
+				if (GV::models) {
+					//CABINAS
+					MyLoadedModel::updateModel(myObjMat, 2, i);
 
-					//GALLINA
-					myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
-					myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
-					MyLoadedModel::updateModel(myObjMat, 1);
+					if (i == 0) {
+						//TRUMP
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
+						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 0);
 
-					//RUEDA NORIA
-					glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
-					MyLoadedModel::updateModel(myNoriaMat, 4);
+						//GALLINA
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
+						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 1);
+
+						//RUEDA NORIA
+						glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
+						MyLoadedModel::updateModel(myNoriaMat, 4);
+					}
+				}
+				else {
+					//CUBOS
+					myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
+					glUniform1f(glGetUniformLocation(cubeProgram, "radius"), Cube::halfW * 20);
+					glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
+					glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
 				}
 			}
 		}
