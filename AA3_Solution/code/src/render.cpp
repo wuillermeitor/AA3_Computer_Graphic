@@ -29,9 +29,12 @@ extern bool loadOBJ(const char * path,
 
 namespace globalVariables {
 	int exCounter = 1;
+	int cameraCounter = 0;
 	bool models = true;
 	bool pressed = false;
 	glm::vec4 modelColor;
+	float lastTime=0;
+	float dt=0;
 }
 namespace GV = globalVariables;
 
@@ -82,6 +85,7 @@ namespace noria {
 
 bool show_test_window = false;
 
+float temp = 0;
 
 bool light_moves = true;
 void GUI() {
@@ -98,6 +102,7 @@ void GUI() {
 
 		}
 		ImGui::Text("Current Exercise: %d", GV::exCounter);
+		ImGui::InputFloat("temp", &temp);
 
 
 	}
@@ -321,31 +326,8 @@ void GLrender(double currentTime) {
 	case 1:
 		break;
 	case 2:
-		if (GV::models) {
-			//TRUMP
-			GV::modelColor = { 0.04, 0.78, 1, 0 };
-			MyLoadedModel::drawModel(0);
-			//GALLINA
-			GV::modelColor = { 0.98, 0.1, 0.86, 0 };
-			MyLoadedModel::drawModel(1);
-
-			//NORIA
-			GV::modelColor = { 0.8, 0.12, 0.07, 0 };
-			MyLoadedModel::drawModel(3);
-			MyLoadedModel::drawModel(4);
-
-			for (int i = 0; i < shaders::nCabinas; ++i) {
-				MyLoadedModel::drawModel(2, i);
-			}
-		}
-		else {
-			for (int i = 0; i < 5; ++i) {
-				MyLoadedModel::cleanupModel(i);
-			}
-		}
-		
-		break;
 	case 3:
+	case 4:
 		if (GV::models) {
 			//TRUMP
 			GV::modelColor = { 0.04, 0.78, 1, 0 };
@@ -361,11 +343,6 @@ void GLrender(double currentTime) {
 
 			for (int i = 0; i < shaders::nCabinas; ++i) {
 				MyLoadedModel::drawModel(2, i);
-			}
-		}
-		else {
-			for (int i = 0; i < 5; ++i) {
-				MyLoadedModel::cleanupModel(i);
 			}
 		}
 
@@ -1448,7 +1425,13 @@ void main() {\n\
 	void updateCube(const glm::mat4& transform) {
 		objMat = transform;
 	}
+
+	static float counter = 0;
 	void drawCube(float currentTime) {
+
+		GV::dt = currentTime - GV::lastTime;
+
+
 		glEnable(GL_PRIMITIVE_RESTART);
 		glBindVertexArray(cubeVao);
 		glUseProgram(cubeProgram);
@@ -1476,6 +1459,13 @@ void main() {\n\
 			if (!GV::pressed) {
 				GV::pressed = true;
 				GV::models = !GV::models;
+			}
+		}
+		else if (keyboardState[SDL_SCANCODE_C]) {
+			if (!GV::pressed) {
+				GV::pressed = true;
+				GV::cameraCounter++;
+				GV::cameraCounter %= 4;
 			}
 		}
 		else
@@ -1549,6 +1539,8 @@ void main() {\n\
 		}
 			break;
 		case 3: {
+			counter += GV::dt;
+
 			RV::_modelView = glm::mat4(1.f);
 			RV::_modelView = glm::rotate(RV::_modelView, glm::radians(20.f), glm::vec3(1.f, 0.f, 0.f));
 			//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
@@ -1560,10 +1552,50 @@ void main() {\n\
 				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
 
 				//CÁMARA
-				if (i == shaders::nCabinas / 2) {
-					RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)) * myObjMat;
+				switch (GV::cameraCounter) {
+				case 0:
+					RV::_modelView = glm::mat4(1.f);
+					RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, -10, -80));
+					//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
+					RV::_modelView = glm::rotate(RV::_modelView, glm::radians(30.f), glm::vec3(1.f, 0.f, 0.f));
 					RV::_MVP = RV::_projection*RV::_modelView;
+					break;
+				case 1:
+					if (i == shaders::nCabinas / 2) {
+						if (counter < 2) {//POLLO
+							RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(3, 2, 3));
+							RV::_modelView *= glm::rotate(glm::mat4(1.f), glm::radians(65.f), glm::vec3(0, 1, 0));
+							RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(2, 0, 0));
+						}
+						else if (counter < 4) {//TRUMP
+							RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(-3, 1, 3));
+							RV::_modelView *= glm::rotate(glm::mat4(1.f), glm::radians(-75.f), glm::vec3(0, 1, 0));
+							RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(-3, 0, 1));
+						}
+						else
+							counter = 0;
+
+						RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)) * myObjMat;
+						RV::_MVP = RV::_projection*RV::_modelView;
+					}
+					break;
+				case 2:
+					RV::_modelView = glm::mat4(1.f);
+					RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, 0, -70));
+					RV::_MVP = RV::_projection*RV::_modelView;
+					break;
+				case 3: 
+					if (i == shaders::nCabinas / 2) {
+						RV::_modelView *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(1, 0, 0));
+						RV::_modelView *= glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 50), glm::vec3(0, 1, 0));
+						RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -4)) * myObjMat;
+						RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(0, -1, temp));
+
+						RV::_MVP = RV::_projection*RV::_modelView;
+					}
+					break;
 				}
+				
 				if (GV::models) {
 					//CABINAS
 					MyLoadedModel::updateModel(myObjMat, 2, i);
@@ -1594,10 +1626,12 @@ void main() {\n\
 					glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
 					glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
 				}
+
+				
 			}
 		}
 			break;
-		case 4:
+		case 4: 
 			break;
 		}
 		
@@ -1607,6 +1641,8 @@ void main() {\n\
 		glUseProgram(0);
 		glBindVertexArray(0);
 		glDisable(GL_PRIMITIVE_RESTART);
+
+		GV::lastTime = currentTime;
 	}
 
 
