@@ -323,6 +323,9 @@ void GLcleanup() {
 
 }
 
+static double timeGiratorio = 0;
+static glm::vec4 newColorMoon= glm::vec4(1);
+static glm::vec4 newColorSun=glm::vec4(1);
 void GLrender(double currentTime) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -336,47 +339,51 @@ void GLrender(double currentTime) {
 	// render code
 	/*Box::drawCube();
 	Axis::drawAxis();*/
+	if (light_moves)
+		timeGiratorio += GV::dt;
+
+	std::cout << timeGiratorio << std::endl;
 
 	const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
 	int secToCircleSun = 20;
 	int secToCircleMoon = 9;
 	float circleRad = 40;
-	float ySPos = circleRad * sin(glm::radians((float)(currentTime / secToCircleSun) * 360));
-	float zSPos = circleRad * cos(glm::radians((float)(currentTime / secToCircleSun) * 360));
-	float yMPos = circleRad * sin(glm::radians((float)(currentTime / secToCircleMoon) * 360));
-	float zMPos = circleRad * cos(glm::radians((float)(currentTime / secToCircleMoon) * 360));
+	float ySPos = circleRad * sin(glm::radians((float)(timeGiratorio / secToCircleSun) * 360));
+	float zSPos = circleRad * cos(glm::radians((float)(timeGiratorio / secToCircleSun) * 360));
+	float yMPos = circleRad * sin(glm::radians((float)(timeGiratorio / secToCircleMoon) * 360));
+	float zMPos = circleRad * cos(glm::radians((float)(timeGiratorio / secToCircleMoon) * 360));
+
 	if (light_moves) {
 		moonPos = glm::rotate(glm::mat4(1), glm::radians(135.f), glm::vec3(0, 1, 0)) * glm::vec4(0, yMPos, zMPos, 1);
 		sunPos = glm::vec3(0, ySPos, zSPos);
+
+
+		ySPos += circleRad;
+		ySPos /= circleRad * 2;
+		ySPos *= 2;
+
+		zSPos += circleRad;
+		zSPos /= circleRad * 2;
+
+		yMPos += circleRad;
+		yMPos /= circleRad * 2;
+
+		newColorMoon = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(0.045, 0.12, 0.45), yMPos), 0);
+
+		if (ySPos < 1)
+			newColorSun = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), ySPos), 0);
+		else
+			newColorSun = glm::vec4(glm::lerp(glm::vec3(1, 0, 0), glm::vec3(1, 1, 0.8), ySPos - 1.f), 0);
+		/*
+		std::cout << "Y: " << yPos << std::endl;
+		std::cout << "Z: " << zPos << std::endl;
+			std::cout << GV::modelColor.x << " " << GV::modelColor.y << " " << GV::modelColor.z << std::endl;
+		*/
+
+
 	}
-
-	ySPos += circleRad;
-	ySPos /= circleRad*2;
-	ySPos *= 2;
-
-	zSPos += circleRad;
-	zSPos /= circleRad * 2;
-
-	yMPos += circleRad;
-	yMPos /= circleRad * 2;
-
-	std::cout << ySPos << std::endl;
-	glm::vec4 newColorMoon = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(0, 0, 1), yMPos), 0);
-	glm::vec4 newColorSun;
-	if (ySPos < 1) {
-		newColorSun = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), ySPos), 0);
-		std::cout << "   1-  "  << newColorSun.r << " " << newColorSun.g << " " << newColorSun.b << std::endl;
-	}
-	else {
-		newColorSun = glm::vec4(glm::lerp(glm::vec3(1, 0, 0), glm::vec3(1, 1, 0.8), ySPos - 1.f), 0);
-		std::cout << "   2-  " << newColorSun.r << " " << newColorSun.g << " " << newColorSun.b << std::endl;
-	}
-	/*
-	std::cout << "Y: " << yPos << std::endl;
-	std::cout << "Z: " << zPos << std::endl;
-		std::cout << GV::modelColor.x << " " << GV::modelColor.y << " " << GV::modelColor.z << std::endl;
-	*/
-
+	else
+		newColorSun = glm::vec4(0);
 	Sphere::updateSphere(moonPos, 1.0f);
 	Sphere::drawSphere();
 
@@ -391,15 +398,15 @@ void GLrender(double currentTime) {
 	case 4:
 		if (GV::models) {
 			//TRUMP
-			GV::modelColor = glm::vec4(0.04, 0.78, 1, 0) * (newColorMoon + newColorSun);
+			GV::modelColor = glm::vec4(0.04, 0.78, 1, 0) * newColorMoon + newColorSun;
 
 			MyLoadedModel::drawModel(0);
 			//GALLINA
-			GV::modelColor = glm::vec4( 0.98, 0.1, 0.86, 0 ) *(newColorMoon + newColorSun);
+			GV::modelColor = glm::vec4( 0.98, 0.1, 0.86, 0 ) * newColorMoon + newColorSun;
 			MyLoadedModel::drawModel(1);
 
 			//NORIA
-			GV::modelColor = glm::vec4( 1, 1, 1, 0 ) *(newColorMoon + newColorSun);
+			GV::modelColor = glm::vec4( 1, 1, 1, 0 ) * newColorMoon + newColorSun;
 			MyLoadedModel::drawModel(3);
 			MyLoadedModel::drawModel(4);
 
@@ -1124,7 +1131,6 @@ namespace MyLoadedModel {
 	in vec3 in_Position;\n\
 	in vec3 in_Normal;\n\
 	uniform vec3 lPos;\n\
-	uniform vec3 sPos;\n\
 	out vec3 lDir;\n\
 	out vec4 vert_Normal;\n\
 	uniform mat4 objMat;\n\
@@ -1134,7 +1140,6 @@ namespace MyLoadedModel {
 		gl_Position = mvpMat * objMat * vec4(in_Position, 1.0);\n\
 		vert_Normal = mv_Mat * objMat * vec4(in_Normal, 0.0);\n\
 		lDir = normalize(lPos - (objMat * vec4(in_Position, 1.0)).xyz );\n\
-		lDir += normalize(sPos - (objMat * vec4(in_Position, 1.0)).xyz );\n\
 	}";
 
 
@@ -1151,7 +1156,7 @@ namespace MyLoadedModel {
 			else if(U>=0.2 && U<0.4) U=0.4;\n\
 			else if(U>=0.4 && U<0.5) U=0.6;\n\
 			else if(U>=0.5) U=1;\n\
-			out_Color = vec4(color.xyz * U , 1.0 );\n\
+			out_Color = vec4(color.xyz * U, 1.0 );\n\
 			\n\
 		}";
 	void setupModel(int model) {
@@ -1338,9 +1343,9 @@ namespace MyLoadedModel {
 		}
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
-		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), moonPos.x, moonPos.y, moonPos.z);
-		glUniform3f(glGetUniformLocation(modelProgram, "sPos"), sunPos.x, sunPos.y, sunPos.z);
+		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), sunPos.x, sunPos.y, sunPos.z);
 		glUniform4f(glGetUniformLocation(modelProgram, "color"), GV::modelColor.x, GV::modelColor.y, GV::modelColor.z, GV::modelColor.a);
+		glUniform4f(glGetUniformLocation(modelProgram, "ambient"), newColorMoon.x, newColorMoon.y, newColorMoon.z, newColorMoon.a);
 	
 		glDrawArrays(GL_TRIANGLES, 0, 25000);
 
@@ -1528,6 +1533,12 @@ void main() {\n\
 				GV::pressed = true;
 				GV::cameraCounter++;
 				GV::cameraCounter %= 4;
+			}
+		}
+		else if (keyboardState[SDL_SCANCODE_D]) {
+			if (!GV::pressed) {
+				GV::pressed = true;
+				light_moves = !light_moves;
 			}
 		}
 		else
