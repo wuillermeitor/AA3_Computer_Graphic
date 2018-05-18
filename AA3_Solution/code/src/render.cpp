@@ -34,6 +34,7 @@ namespace globalVariables {
 	int cameraCounter = 0;
 	bool models = true;
 	bool pressed = false;
+	bool bulbLight = false;
 	glm::vec4 modelColor;
 	float lastTime=0;
 	float dt=0;
@@ -326,6 +327,8 @@ void GLcleanup() {
 static double timeGiratorio = 0;
 static glm::vec4 newColorMoon= glm::vec4(1);
 static glm::vec4 newColorSun=glm::vec4(1);
+static glm::vec4 newAmbientLight = glm::vec4(1);
+static glm::vec4 newbulbLight = glm::vec4(1);
 void GLrender(double currentTime) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
@@ -339,6 +342,13 @@ void GLrender(double currentTime) {
 	// render code
 	/*Box::drawCube();
 	Axis::drawAxis();*/
+	if (GV::bulbLight) {
+		newbulbLight = glm::vec4(0, 1, 0, 0);
+	}
+	else {
+		newbulbLight = glm::vec4(0);
+	}
+
 	if (light_moves)
 		timeGiratorio += GV::dt;
 
@@ -368,12 +378,17 @@ void GLrender(double currentTime) {
 		yMPos += circleRad;
 		yMPos /= circleRad * 2;
 
-		newColorMoon = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(0.045, 0.12, 0.45), yMPos), 0);
+		newColorMoon = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(172.f / 255.f, 220.f / 255.f, 221.f / 255.f), yMPos), 0);
 
-		if (ySPos < 1)
+		if (ySPos < 1) {
 			newColorSun = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), ySPos), 0);
-		else
+			newAmbientLight = glm::vec4(10 / 255.f, 15 / 255.f, 68 / 255.f, 0);
+		}
+		else {
 			newColorSun = glm::vec4(glm::lerp(glm::vec3(1, 0, 0), glm::vec3(1, 1, 0.8), ySPos - 1.f), 0);
+			newAmbientLight = glm::vec4(1);
+		}
+
 		/*
 		std::cout << "Y: " << yPos << std::endl;
 		std::cout << "Z: " << zPos << std::endl;
@@ -398,15 +413,15 @@ void GLrender(double currentTime) {
 	case 4:
 		if (GV::models) {
 			//TRUMP
-			GV::modelColor = glm::vec4(0.04, 0.78, 1, 0) * newColorMoon + newColorSun;
+			GV::modelColor = glm::vec4(0.04, 0.78, 1, 0);
 
 			MyLoadedModel::drawModel(0);
 			//GALLINA
-			GV::modelColor = glm::vec4( 0.98, 0.1, 0.86, 0 ) * newColorMoon + newColorSun;
+			GV::modelColor = glm::vec4( 0.98, 0.1, 0.86, 0 );
 			MyLoadedModel::drawModel(1);
 
 			//NORIA
-			GV::modelColor = glm::vec4( 1, 1, 1, 0 ) * newColorMoon + newColorSun;
+			GV::modelColor = glm::vec4( 1, 1, 1, 0 );
 			MyLoadedModel::drawModel(3);
 			MyLoadedModel::drawModel(4);
 
@@ -1131,7 +1146,11 @@ namespace MyLoadedModel {
 	in vec3 in_Position;\n\
 	in vec3 in_Normal;\n\
 	uniform vec3 lPos;\n\
+	uniform vec3 lPos2;\n\
+	uniform vec3 lPos3;\n\
 	out vec3 lDir;\n\
+	out vec3 lDir2;\n\
+	out vec3 lDir3;\n\
 	out vec4 vert_Normal;\n\
 	uniform mat4 objMat;\n\
 	uniform mat4 mv_Mat;\n\
@@ -1140,6 +1159,8 @@ namespace MyLoadedModel {
 		gl_Position = mvpMat * objMat * vec4(in_Position, 1.0);\n\
 		vert_Normal = mv_Mat * objMat * vec4(in_Normal, 0.0);\n\
 		lDir = normalize(lPos - (objMat * vec4(in_Position, 1.0)).xyz );\n\
+		lDir2 = normalize(lPos2 - (objMat * vec4(in_Position, 1.0)).xyz );\n\
+		lDir3 = normalize(lPos3 - (objMat * vec4(in_Position, 1.0)).xyz );\n\
 	}";
 
 
@@ -1147,16 +1168,34 @@ namespace MyLoadedModel {
 		"#version 330\n\
 		in vec4 vert_Normal;\n\
 		in vec3 lDir;\n\
+		in vec3 lDir2;\n\
+		in vec3 lDir3;\n\
 		out vec4 out_Color;\n\
 		uniform mat4 mv_Mat;\n\
 		uniform vec4 color;\n\
+		uniform vec4 color2;\n\
+		uniform vec4 color3;\n\
+		uniform vec4 ambient;\n\
 		void main() {\n\
 			float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
 			if(U<0.2) U=0.2;\n\
 			else if(U>=0.2 && U<0.4) U=0.4;\n\
 			else if(U>=0.4 && U<0.5) U=0.6;\n\
 			else if(U>=0.5) U=1;\n\
-			out_Color = vec4(color.xyz * U, 1.0 );\n\
+			\n\
+			float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+			if(U2<0.2) U2=0.2;\n\
+			else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
+			else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
+			else if(U2>=0.5) U2=1;\n\
+			\n\
+			float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+			if(U3<0.2) U3=0.2;\n\
+			else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
+			else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
+			else if(U3>=0.5) U3=1;\n\
+			\n\
+			out_Color = (vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient;\n\
 			\n\
 		}";
 	void setupModel(int model) {
@@ -1344,8 +1383,12 @@ namespace MyLoadedModel {
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
 		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), sunPos.x, sunPos.y, sunPos.z);
-		glUniform4f(glGetUniformLocation(modelProgram, "color"), GV::modelColor.x, GV::modelColor.y, GV::modelColor.z, GV::modelColor.a);
-		glUniform4f(glGetUniformLocation(modelProgram, "ambient"), newColorMoon.x, newColorMoon.y, newColorMoon.z, newColorMoon.a);
+		glUniform3f(glGetUniformLocation(modelProgram, "lPos2"), moonPos.x, moonPos.y, moonPos.z);
+		glUniform3f(glGetUniformLocation(modelProgram, "lPos3"), moonPos.x, moonPos.y, moonPos.z);
+		glUniform4f(glGetUniformLocation(modelProgram, "color"), newColorSun.x, newColorSun.y, newColorSun.z, newColorSun.a);
+		glUniform4f(glGetUniformLocation(modelProgram, "color2"), newColorMoon.x, newColorMoon.y, newColorMoon.z, newColorMoon.a);
+		glUniform4f(glGetUniformLocation(modelProgram, "color3"), newbulbLight.x, newbulbLight.y, newbulbLight.z, newbulbLight.a);
+		glUniform4f(glGetUniformLocation(modelProgram, "ambient"), newAmbientLight.x, newAmbientLight.y, newAmbientLight.z, newAmbientLight.a);
 	
 		glDrawArrays(GL_TRIANGLES, 0, 25000);
 
@@ -1541,6 +1584,12 @@ void main() {\n\
 				light_moves = !light_moves;
 			}
 		}
+		else if (keyboardState[SDL_SCANCODE_B]) {
+			if (!GV::pressed) {
+				GV::pressed = true;
+				GV::bulbLight = !GV::bulbLight;
+			}
+		}
 		else
 			GV::pressed = false;
 
@@ -1664,7 +1713,13 @@ void main() {\n\
 					}
 					break;
 				}
-				
+
+				if (GV::bulbLight && i == 0) {
+
+					Sphere::updateSphere(myObjMat*glm::vec4(0, -1.5, 0, 1), 0.25f);
+					Sphere::drawSphere();
+				}
+
 				if (GV::models) {
 					//CABINAS
 					MyLoadedModel::updateModel(myObjMat, 2, i);
@@ -1683,8 +1738,13 @@ void main() {\n\
 						//RUEDA NORIA
 						glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
 						MyLoadedModel::updateModel(myNoriaMat, 4);
+
+
+						
 					}
 				}
+
+				
 				else {
 					//CUBOS
 					myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
