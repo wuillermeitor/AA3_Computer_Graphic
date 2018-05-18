@@ -107,6 +107,16 @@ void GUI() {
 		}
 
 		ImGui::Text("Current Exercise: %d", GV::exCounter);
+		if (light_moves)
+			ImGui::Text("D key to Day-Night Transition is: On");
+		else
+			ImGui::Text("D key to Day-Night Transition is: Off");
+
+		if (GV::bulbLight)
+			ImGui::Text("B key to Bulb Light: On");
+		else
+			ImGui::Text("B key to Bulb Light: Off");
+
 
 		if (GV::exCounter == 2) {
 			switch (GV::cameraCounter) {
@@ -352,7 +362,6 @@ void GLrender(double currentTime) {
 	if (light_moves)
 		timeGiratorio += GV::dt;
 
-	std::cout << timeGiratorio << std::endl;
 
 	const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
 	int secToCircleSun = 20;
@@ -1172,6 +1181,7 @@ namespace MyLoadedModel {
 		in vec3 lDir3;\n\
 		out vec4 out_Color;\n\
 		uniform mat4 mv_Mat;\n\
+		uniform vec4 modelcolor;\n\
 		uniform vec4 color;\n\
 		uniform vec4 color2;\n\
 		uniform vec4 color3;\n\
@@ -1195,7 +1205,7 @@ namespace MyLoadedModel {
 			else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
 			else if(U3>=0.5) U3=1;\n\
 			\n\
-			out_Color = (vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient;\n\
+			out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
 			\n\
 		}";
 	void setupModel(int model) {
@@ -1385,6 +1395,7 @@ namespace MyLoadedModel {
 		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), sunPos.x, sunPos.y, sunPos.z);
 		glUniform3f(glGetUniformLocation(modelProgram, "lPos2"), moonPos.x, moonPos.y, moonPos.z);
 		glUniform3f(glGetUniformLocation(modelProgram, "lPos3"), moonPos.x, moonPos.y, moonPos.z);
+		glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), GV::modelColor.x, GV::modelColor.y, GV::modelColor.z, GV::modelColor.a);
 		glUniform4f(glGetUniformLocation(modelProgram, "color"), newColorSun.x, newColorSun.y, newColorSun.z, newColorSun.a);
 		glUniform4f(glGetUniformLocation(modelProgram, "color2"), newColorMoon.x, newColorMoon.y, newColorMoon.z, newColorMoon.a);
 		glUniform4f(glGetUniformLocation(modelProgram, "color3"), newbulbLight.x, newbulbLight.y, newbulbLight.z, newbulbLight.a);
@@ -1673,7 +1684,7 @@ void main() {\n\
 				case 0://GENERAL SHOT
 					RV::_modelView = glm::mat4(1.f);
 					RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, -10, -80));
-					//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
+					//RV::_modelView *= glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
 					RV::_modelView = glm::rotate(RV::_modelView, glm::radians(30.f), glm::vec3(1.f, 0.f, 0.f));
 					RV::_MVP = RV::_projection*RV::_modelView;
 					break;
@@ -1714,13 +1725,17 @@ void main() {\n\
 					break;
 				}
 
-				if (GV::bulbLight && i == 0) {
-
-					Sphere::updateSphere(myObjMat*glm::vec4(0, -1.5, 0, 1), 0.25f);
-					Sphere::drawSphere();
-				}
+				
 
 				if (GV::models) {
+
+					if (GV::bulbLight && i == 0) {
+						glm::vec4 spherepos = myObjMat*glm::vec4(0, -3.5, 0, 1);
+						Sphere::updateSphere(spherepos, 1.f);
+						Sphere::drawSphere();
+						std::cout << "Bulb: " << spherepos.x << " " << spherepos.y << " " << spherepos.z << std::endl;
+					}
+
 					//CABINAS
 					MyLoadedModel::updateModel(myObjMat, 2, i);
 
