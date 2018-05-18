@@ -34,7 +34,7 @@ namespace globalVariables {
 	int cameraCounter = 0;
 	bool models = true;
 	bool pressed = false;
-	bool bulbLight = false;
+	int bulbLight = 0;
 	glm::vec4 modelColor;
 	float lastTime=0;
 	float dt=0;
@@ -112,10 +112,12 @@ void GUI() {
 		else
 			ImGui::Text("D key to Day-Night Transition is: Off");
 
-		if (GV::bulbLight)
+		if (GV::bulbLight == 0)
 			ImGui::Text("B key to Bulb Light: On");
-		else
+		else if (GV::bulbLight == 1)
 			ImGui::Text("B key to Bulb Light: Off");
+		else if (GV::bulbLight == 2)
+			ImGui::Text("B key to Bulb Light: Movement");
 
 
 		if (GV::exCounter == 2) {
@@ -352,15 +354,16 @@ void GLrender(double currentTime) {
 	// render code
 	/*Box::drawCube();
 	Axis::drawAxis();*/
-	if (GV::bulbLight) {
+	if (GV::bulbLight == 0 || GV::bulbLight == 2) {
 		newbulbLight = glm::vec4(0, 1, 0, 0);
 	}
-	else {
+	else if (GV::bulbLight == 1) {
 		newbulbLight = glm::vec4(0);
 	}
 
-	if (light_moves)
+	if (light_moves) {
 		timeGiratorio += GV::dt;
+	}
 
 
 	const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
@@ -1598,7 +1601,10 @@ void main() {\n\
 		else if (keyboardState[SDL_SCANCODE_B]) {
 			if (!GV::pressed) {
 				GV::pressed = true;
-				GV::bulbLight = !GV::bulbLight;
+				GV::bulbLight++;
+				if (GV::bulbLight == 3) {
+					GV::bulbLight = 0;
+				}
 			}
 		}
 		else
@@ -1729,9 +1735,13 @@ void main() {\n\
 
 				if (GV::models) {
 
-					if (GV::bulbLight && i == 0) {
+					if ((GV::bulbLight== 0 || GV::bulbLight== 2)  && i == 0) {
 						glm::vec4 spherepos = myObjMat*glm::vec4(0, -3.5, 0, 1);
 						Sphere::updateSphere(spherepos, 1.f);
+						if (GV::bulbLight == 2){
+							//aqui deberia ir el movimiento de la sphere pero algo dec esta fent malament perque no hi ha manera de que es mogui
+							spherepos.x + currentTime;
+						}
 						Sphere::drawSphere();
 						std::cout << "Bulb: " << spherepos.x << " " << spherepos.y << " " << spherepos.z << std::endl;
 					}
