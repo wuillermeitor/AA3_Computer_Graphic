@@ -19,9 +19,27 @@
 #define PI  3.141592658
 #define nExercises 17
 
+namespace sun {
+	glm::vec3 pos(0);
+	glm::vec4 color(1);
+	float period=20.f;
+	glm::vec4 ambient=glm::vec4(1);
+}
+
+namespace moon {
+	glm::vec3 pos(0);
+	glm::vec4 color(1);
+	float period=9.f;
+}
+
+namespace bulb {
+	glm::vec3 pos(0);
+	glm::vec4 color(1);
+}
+
 glm::vec3 sunPos;
 glm::vec3 moonPos;
-
+glm::vec3 bulbPos;
 
 extern bool loadOBJ(const char * path,
 	std::vector < glm::vec3 > & out_vertices,
@@ -34,7 +52,7 @@ namespace globalVariables {
 	int cameraCounter = 0;
 	bool models = true;
 	bool pressed = false;
-	int bulbLight = 0;
+	int bulbState = 0;
 	glm::vec4 modelColor;
 	float lastTime=0;
 	float dt=0;
@@ -54,6 +72,8 @@ std::vector< glm::vec3 > normals;
 namespace trump {
 	GLuint modelVao;
 	GLuint modelVbo[3];
+	glm::vec4 color={1, 0, 0, 0};
+
 
 	glm::mat4 objMat = glm::mat4(1.f);
 }
@@ -61,6 +81,7 @@ namespace trump {
 namespace chicken {
 	GLuint modelVao;
 	GLuint modelVbo[3];
+	glm::vec4 color = { 0, 1, 0, 0 };
 
 	glm::mat4 objMat = glm::mat4(1.f);
 }
@@ -82,6 +103,7 @@ namespace pata {
 namespace noria {
 	GLuint modelVao;
 	GLuint modelVbo[3];
+	glm::vec4 color = { 196/255.f, 144 / 255.f, 204 / 255.f, 0 };
 
 	glm::mat4 objMat = glm::mat4(1.f);
 }
@@ -101,22 +123,17 @@ void GUI() {
 	{
 		ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / ImGui::GetIO().Framerate, ImGui::GetIO().Framerate);//FrameRate
 
-
-		if (ImGui::Button("Toggle Light Move")) {
-			light_moves = !light_moves;
-		}
-
 		ImGui::Text("Current Exercise: %d", GV::exCounter);
 		if (light_moves)
 			ImGui::Text("D key to Day-Night Transition is: On");
 		else
 			ImGui::Text("D key to Day-Night Transition is: Off");
 
-		if (GV::bulbLight == 0)
+		if (GV::bulbState == 0)
 			ImGui::Text("B key to Bulb Light: On");
-		else if (GV::bulbLight == 1)
+		else if (GV::bulbState == 1)
 			ImGui::Text("B key to Bulb Light: Off");
-		else if (GV::bulbLight == 2)
+		else if (GV::bulbState == 2)
 			ImGui::Text("B key to Bulb Light: Movement");
 
 
@@ -337,115 +354,109 @@ void GLcleanup() {
 }
 
 static double timeGiratorio = 0;
-static glm::vec4 newColorMoon= glm::vec4(1);
-static glm::vec4 newColorSun=glm::vec4(1);
-static glm::vec4 newAmbientLight = glm::vec4(1);
-static glm::vec4 newbulbLight = glm::vec4(1);
 void GLrender(double currentTime) {
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-	/*RV::_modelView = glm::mat4(1.f);
-	RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
-	RV::_modelView = glm::rotate(RV::_modelView, RV::rota[1], glm::vec3(1.f, 0.f, 0.f));
-	RV::_modelView = glm::rotate(RV::_modelView, RV::rota[0], glm::vec3(0.f, 1.f, 0.f));
+	
 
-	RV::_MVP = RV::_projection * RV::_modelView;*/
-
-	// render code
-	/*Box::drawCube();
-	Axis::drawAxis();*/
-	if (GV::bulbLight == 0 || GV::bulbLight == 2) {
-		newbulbLight = glm::vec4(0, 1, 0, 0);
-	}
-	else if (GV::bulbLight == 1) {
-		newbulbLight = glm::vec4(0);
-	}
-
-	if (light_moves) {
-		timeGiratorio += GV::dt;
-	}
-
-
-	const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
-	int secToCircleSun = 20;
-	int secToCircleMoon = 9;
-	float circleRad = 40;
-	float ySPos = circleRad * sin(glm::radians((float)(timeGiratorio / secToCircleSun) * 360));
-	float zSPos = circleRad * cos(glm::radians((float)(timeGiratorio / secToCircleSun) * 360));
-	float yMPos = circleRad * sin(glm::radians((float)(timeGiratorio / secToCircleMoon) * 360));
-	float zMPos = circleRad * cos(glm::radians((float)(timeGiratorio / secToCircleMoon) * 360));
-
-	if (light_moves) {
-		moonPos = glm::rotate(glm::mat4(1), glm::radians(135.f), glm::vec3(0, 1, 0)) * glm::vec4(0, yMPos, zMPos, 1);
-		sunPos = glm::vec3(0, ySPos, zSPos);
-
-
-		ySPos += circleRad;
-		ySPos /= circleRad * 2;
-		ySPos *= 2;
-
-		zSPos += circleRad;
-		zSPos /= circleRad * 2;
-
-		yMPos += circleRad;
-		yMPos /= circleRad * 2;
-
-		newColorMoon = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(172.f / 255.f, 220.f / 255.f, 221.f / 255.f), yMPos), 0);
-
-		if (ySPos < 1) {
-			newColorSun = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), ySPos), 0);
-			newAmbientLight = glm::vec4(10 / 255.f, 15 / 255.f, 68 / 255.f, 0);
-		}
-		else {
-			newColorSun = glm::vec4(glm::lerp(glm::vec3(1, 0, 0), glm::vec3(1, 1, 0.8), ySPos - 1.f), 0);
-			newAmbientLight = glm::vec4(1);
-		}
-
-		/*
-		std::cout << "Y: " << yPos << std::endl;
-		std::cout << "Z: " << zPos << std::endl;
-			std::cout << GV::modelColor.x << " " << GV::modelColor.y << " " << GV::modelColor.z << std::endl;
-		*/
-
-
-	}
-	else
-		newColorSun = glm::vec4(0);
-	Sphere::updateSphere(moonPos, 1.0f);
-	Sphere::drawSphere();
-
-	Sphere::updateSphere(sunPos, 1.0f);
-	Sphere::drawSphere();
+	Cube::drawCube(currentTime);
 
 	switch (GV::exCounter) {
-	case 1:
+	case 1: //solo pinta noria de cubos
 		break;
-	case 2:
-	case 3:
-	case 4:
-		if (GV::models) {
-			//TRUMP
-			GV::modelColor = glm::vec4(0.04, 0.78, 1, 0);
+	case 2: //noria de modelos
+		MyLoadedModel::drawModel(0);
+		MyLoadedModel::drawModel(1);
+		MyLoadedModel::drawModel(3);
+		MyLoadedModel::drawModel(4);
+		for (int i = 0; i<shaders::nCabinas; ++i)
+			MyLoadedModel::drawModel(2, i);
+		break;
+	case 3: //noria de modelos + movimientos de cámara
+		MyLoadedModel::drawModel(0);
+		MyLoadedModel::drawModel(1);
+		MyLoadedModel::drawModel(3);
+		MyLoadedModel::drawModel(4);
+		for(int i=0; i<shaders::nCabinas; ++i)
+			MyLoadedModel::drawModel(2, i);
+		break;
+	case 4: { //noria de modelos + fuentes de luz
+			//time giratorio
+		if (light_moves) {
+			timeGiratorio += GV::dt;
+		}
+		//ACTUALIZAR POSICIÓN Y COLOR DE LOS ASTROS
+		float circleRad = 40;
+		float ySinSol = sin(glm::radians((float)(timeGiratorio / sun::period) * 360));
+		float zCosSol = cos(glm::radians((float)(timeGiratorio / sun::period) * 360));
+		float ySinLuna = sin(glm::radians((float)(timeGiratorio / moon::period) * 360));
+		float zCosLuna = cos(glm::radians((float)(timeGiratorio / moon::period) * 360));
 
-			MyLoadedModel::drawModel(0);
-			//GALLINA
-			GV::modelColor = glm::vec4( 0.98, 0.1, 0.86, 0 );
-			MyLoadedModel::drawModel(1);
+		if (light_moves) {
+			//POSICIONES EN FUNCIÓN DEL SENO Y COSENO DE SOL Y LUNA
+			moon::pos = glm::rotate(glm::mat4(1), glm::radians(135.f), glm::vec3(0, 1, 0)) * glm::vec4(0, ySinLuna*circleRad, zCosLuna*circleRad, 1);
+			sun::pos = glm::vec3(0, ySinSol*circleRad, zCosSol*circleRad);
 
-			//NORIA
-			GV::modelColor = glm::vec4( 1, 1, 1, 0 );
-			MyLoadedModel::drawModel(3);
-			MyLoadedModel::drawModel(4);
+			//hacemos que los senos de estos valores vayan de 0 a 2
+			ySinSol += 1;
+			zCosSol += 1;
+			ySinLuna += 1;
 
-			for (int i = 0; i < shaders::nCabinas; ++i) {
-				MyLoadedModel::drawModel(2, i);
+			//COLORES EN FUNCIÓN DE LA POSICIÓN
+			//luna
+			moon::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(172.f / 255.f, 220.f / 255.f, 221.f / 255.f), ySinLuna), 0);
+
+			//sol
+			if (ySinSol < 1) {
+				sun::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), ySinSol), 0);
+				sun::ambient = glm::vec4(10 / 255.f, 15 / 255.f, 68 / 255.f, 0);
 			}
+			else {
+				sun::color = glm::vec4(glm::lerp(glm::vec3(1, 0, 0), glm::vec3(1, 1, 0.8), ySinSol - 1.f), 0);
+				sun::ambient = glm::vec4(1);
+			}
+
+			//bulb
+			bulb::color = { 0, 0, 0, 0 };
+		}
+		else {
+			//ACTUALIZACIÓN DE POSICIONES
+
+			//sol nada
+			//luna nada
+			//bulb
+			if (GV::bulbState == 2) { //if pendulo
+				bulb::pos = { 0, 0, 0 };
+				bulb::pos.y = -glm::abs(cos(currentTime));
+				bulb::pos.z = sin(currentTime);
+			}
+
+			//COLORES
+
+			//luna
+			moon::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(172.f / 255.f, 220.f / 255.f, 221.f / 255.f), ySinLuna), 0);
+			//sol
+			sun::color = glm::vec4(0);
+			//bulb
+			bulb::color = { 0, 1, 0, 0 };
+			//ambient
+			sun::ambient = glm::vec4(10 / 255.f, 15 / 255.f, 68 / 255.f, 0);
 		}
 
+		Sphere::updateSphere(sun::pos, 1.f);
+		Sphere::drawSphere();
+		Sphere::updateSphere(moon::pos, 1.f);
+		Sphere::drawSphere();
+		Sphere::updateSphere(bulb::pos, .25f);
+		Sphere::drawSphere();
+
+	}
+		break;
+	case 5: //global scene composition
+		break;
+	case 6: //toon shading exercises
 		break;
 	}
-
-	Cube::drawCube(currentTime);	
 
 	ImGui::Render();
 }
@@ -1371,38 +1382,42 @@ namespace MyLoadedModel {
 			glBindVertexArray(trump::modelVao);
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(trump::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), trump::color.x, trump::color.y, trump::color.z, trump::color.a);
 			break;
 		case 1:
 			glBindVertexArray(chicken::modelVao);
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(chicken::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), chicken::color.x, chicken::color.y, chicken::color.z, chicken::color.a);
 			break;
 		case 2:
 			glBindVertexArray(cabina::modelVao[cabina]);
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(cabina::objMat[cabina]));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), noria::color.x, noria::color.y, noria::color.z, noria::color.a);
 			break;
 		case 3:
 			glBindVertexArray(pata::modelVao);
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(pata::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), noria::color.x, noria::color.y, noria::color.z, noria::color.a);
 			break;
 		case 4:
 			glBindVertexArray(noria::modelVao);
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(noria::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), noria::color.x, noria::color.y, noria::color.z, noria::color.a);
 			break;
 		}
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
-		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), sunPos.x, sunPos.y, sunPos.z);
-		glUniform3f(glGetUniformLocation(modelProgram, "lPos2"), moonPos.x, moonPos.y, moonPos.z);
-		glUniform3f(glGetUniformLocation(modelProgram, "lPos3"), moonPos.x, moonPos.y, moonPos.z);
-		glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), GV::modelColor.x, GV::modelColor.y, GV::modelColor.z, GV::modelColor.a);
-		glUniform4f(glGetUniformLocation(modelProgram, "color"), newColorSun.x, newColorSun.y, newColorSun.z, newColorSun.a);
-		glUniform4f(glGetUniformLocation(modelProgram, "color2"), newColorMoon.x, newColorMoon.y, newColorMoon.z, newColorMoon.a);
-		glUniform4f(glGetUniformLocation(modelProgram, "color3"), newbulbLight.x, newbulbLight.y, newbulbLight.z, newbulbLight.a);
-		glUniform4f(glGetUniformLocation(modelProgram, "ambient"), newAmbientLight.x, newAmbientLight.y, newAmbientLight.z, newAmbientLight.a);
+		glUniform3f(glGetUniformLocation(modelProgram, "lPos"), sun::pos.x, sun::pos.y, sun::pos.z);
+		glUniform3f(glGetUniformLocation(modelProgram, "lPos2"), moon::pos.x, moon::pos.y, moon::pos.z);
+		glUniform3f(glGetUniformLocation(modelProgram, "lPos3"), bulb::pos.x, bulb::pos.y, bulb::pos.z);
+		glUniform4f(glGetUniformLocation(modelProgram, "color"), sun::color.x, sun::color.y, sun::color.z, sun::color.a);
+		glUniform4f(glGetUniformLocation(modelProgram, "color2"), moon::color.x, moon::color.y, moon::color.z, moon::color.a);
+		glUniform4f(glGetUniformLocation(modelProgram, "color3"), bulb::color.x, bulb::color.y, bulb::color.z, bulb::color.a);
+		glUniform4f(glGetUniformLocation(modelProgram, "ambient"), sun::ambient.x, sun::ambient.y, sun::ambient.z, sun::ambient.a);
 	
 		glDrawArrays(GL_TRIANGLES, 0, 25000);
 
@@ -1553,15 +1568,16 @@ void main() {\n\
 	static float counter = 0;
 	void drawCube(float currentTime) {
 
-		GV::dt = currentTime - GV::lastTime;
-
-
 		glEnable(GL_PRIMITIVE_RESTART);
 		glBindVertexArray(cubeVao);
 		glUseProgram(cubeProgram);
 
+		//deltatime setup
+		GV::dt = currentTime - GV::lastTime;
+
+		//KEYBOARD INPUT
 		const Uint8* keyboardState = SDL_GetKeyboardState(NULL);
-		if (keyboardState[SDL_SCANCODE_A]) {
+		if (keyboardState[SDL_SCANCODE_A]) { //next exercise
 			if (!GV::pressed) {
 				GV::pressed = true;
 				if (GV::exCounter == nExercises)
@@ -1569,8 +1585,8 @@ void main() {\n\
 				else
 					GV::exCounter++;
 			}
-		}
-		else if (keyboardState[SDL_SCANCODE_Z]) {
+		} 
+		else if (keyboardState[SDL_SCANCODE_Z]) { //previous exercise
 			if (!GV::pressed) {
 				GV::pressed = true;
 				if (GV::exCounter == 1)
@@ -1579,43 +1595,55 @@ void main() {\n\
 					GV::exCounter--;
 			}
 		}
-		else if (keyboardState[SDL_SCANCODE_M]) {
+		else if (keyboardState[SDL_SCANCODE_M]) { //  models/cubes
 			if (!GV::pressed) {
 				GV::pressed = true;
 				GV::models = !GV::models;
 			}
 		}
-		else if (keyboardState[SDL_SCANCODE_C]) {
+		else if (keyboardState[SDL_SCANCODE_C]) { //camera modes
 			if (!GV::pressed) {
 				GV::pressed = true;
 				GV::cameraCounter++;
 				GV::cameraCounter %= 4;
 			}
 		}
-		else if (keyboardState[SDL_SCANCODE_D]) {
+		else if (keyboardState[SDL_SCANCODE_D]) { //day/night transition
 			if (!GV::pressed) {
 				GV::pressed = true;
 				light_moves = !light_moves;
 			}
 		}
-		else if (keyboardState[SDL_SCANCODE_B]) {
+		else if (keyboardState[SDL_SCANCODE_B]) { //bulb states
 			if (!GV::pressed) {
 				GV::pressed = true;
-				GV::bulbLight++;
-				if (GV::bulbLight == 3) {
-					GV::bulbLight = 0;
+				GV::bulbState++;
+				if (GV::bulbState == 3) {
+					GV::bulbState = 0;
 				}
+			}
+		}
+		else if (keyboardState[SDL_SCANCODE_T]) { //toon shading
+			if (!GV::pressed) {
+				GV::pressed = true;
+				//logic here
+			}
+		}
+		else if (keyboardState[SDL_SCANCODE_S]) { //stencil buffer
+			if (!GV::pressed) {
+				GV::pressed = true;
+				//logic here
 			}
 		}
 		else
 			GV::pressed = false;
 
+
 		switch (GV::exCounter) {
-		case 1: {
-			RV::_modelView = glm::mat4(1.f);
+		case 1: { //NORIA DE CUBOS
+			RV::_modelView = glm::mat4(1);
 			RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, -10, -80));
-			//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
-			RV::_modelView = glm::rotate(RV::_modelView, static_cast<float>(((2 * PI) / 360.f)*30.f), glm::vec3(1.f, 0.f, 0.f));
+			RV::_modelView = glm::rotate(RV::_modelView, glm::radians(30.f), glm::vec3(1.f, 0.f, 0.f));
 			RV::_MVP = RV::_projection*RV::_modelView;
 			
 			for (int i = 0; i < shaders::nCabinas; ++i) {
@@ -1632,57 +1660,62 @@ void main() {\n\
 			}
 		}
 			break;
-		//case 2: {
-		//	RV::_modelView = glm::mat4(1.f);
-		//	RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, -10, -80));
-		//	//RV::_modelView = glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
-		//	//RV::_modelView = glm::rotate(RV::_modelView, static_cast<float>(((2 * PI) / 360.f)*30.f), glm::vec3(1.f, 0.f, 0.f));
-		//	RV::_modelView = glm::rotate(RV::_modelView, glm::radians(30.f), glm::vec3(1.f, 0.f, 0.f));
-		//	RV::_MVP = RV::_projection*RV::_modelView;
-		//	for (int i = 0; i < shaders::nCabinas; ++i) {
-		//		glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
-		//			shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
-		//		glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
-		//		if (GV::models) {
-		//			//CABINAS
-		//			MyLoadedModel::updateModel(myObjMat, 2, i);
-		//			if (i == 0) {
-		//				//TRUMP
-		//				myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
-		//				myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
-		//				MyLoadedModel::updateModel(myObjMat, 0);
-		//				//GALLINA
-		//				myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
-		//				myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
-		//				MyLoadedModel::updateModel(myObjMat, 1);
-		//				//RUEDA NORIA
-		//				glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
-		//				MyLoadedModel::updateModel(myNoriaMat, 4);
-		//			}
-		//		}
-		//		else {
-		//			//CUBOS
-		//			myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
-		//			glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
-		//			glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
-		//			glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
-		//			glUniform1f(glGetUniformLocation(cubeProgram, "radius"), Cube::halfW * 20);
-		//			glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
-		//			glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
-		//		}
-		//	}
-		//}
-		//	break;
-		case 2: {
+		case 2: { //NORIA DE MODELOS
 			counter += GV::dt;
 			RV::_modelView = glm::mat4(1.f);
 			RV::_modelView = glm::rotate(RV::_modelView, glm::radians(20.f), glm::vec3(1.f, 0.f, 0.f));
-			//RV::_modelView *= glm::translate(RV::_modelView, glm::vec3(RV::panv[0], RV::panv[1], RV::panv[2]));
 			
 
 			for (int i = 0; i < shaders::nCabinas; ++i) {
 				glm::vec3 posiciones = {	shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
 											shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
+				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));			
+
+
+				if (GV::models) {
+
+					//CABINAS
+					MyLoadedModel::updateModel(myObjMat, 2, i);
+
+					if (i == 0) {
+						//TRUMP
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
+						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 0);
+
+						//GALLINA
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
+						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 1);
+
+						//RUEDA NORIA
+						glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
+						MyLoadedModel::updateModel(myNoriaMat, 4);
+
+					}
+				}
+				else {
+					//CUBOS
+					myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
+					glUniform1f(glGetUniformLocation(cubeProgram, "radius"), Cube::halfW * 20);
+					glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
+					glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
+				}
+			}
+		}
+			break;
+		case 3: { //NORIA DE MODELOS
+			counter += GV::dt;
+			RV::_modelView = glm::mat4(1.f);
+			RV::_modelView = glm::rotate(RV::_modelView, glm::radians(20.f), glm::vec3(1.f, 0.f, 0.f));
+
+
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
+					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
 				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
 
 				//CÁMARA
@@ -1720,30 +1753,28 @@ void main() {\n\
 					break;
 				case 3://ROTATING GOD'S EYE SHOT
 					if (i == shaders::nCabinas / 2) {
-						
+
 						RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(0, -1, -0.6));
 						RV::_modelView *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(1, 0, 0));
 						RV::_modelView *= glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 50), glm::vec3(0, 1, 0));
 						RV::_modelView *= myObjMat;
-						
+
 						RV::_MVP = RV::_projection*RV::_modelView;
 					}
 					break;
 				}
 
-				
+
 
 				if (GV::models) {
 
-					if ((GV::bulbLight== 0 || GV::bulbLight== 2)  && i == 0) {
-						glm::vec4 spherepos = myObjMat*glm::vec4(0, -3.5, 0, 1);
-						Sphere::updateSphere(spherepos, 1.f);
-						if (GV::bulbLight == 2){
-							//aqui deberia ir el movimiento de la sphere pero algo dec esta fent malament perque no hi ha manera de que es mogui
-							spherepos.x + currentTime;
+					if ((GV::bulbState == 0 || GV::bulbState == 2) && i == 0) {
+						if (GV::bulbState == 2) {
+							bulbPos = myObjMat * glm::vec4(bulbPos, 1);
 						}
-						Sphere::drawSphere();
-						std::cout << "Bulb: " << spherepos.x << " " << spherepos.y << " " << spherepos.z << std::endl;
+						Sphere::updateSphere(bulbPos, .3f);
+
+						//std::cout << "Bulb: " << currentTime << std::endl;
 					}
 
 					//CABINAS
@@ -1765,11 +1796,11 @@ void main() {\n\
 						MyLoadedModel::updateModel(myNoriaMat, 4);
 
 
-						
+
 					}
 				}
 
-				
+
 				else {
 					//CUBOS
 					myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
@@ -1781,12 +1812,8 @@ void main() {\n\
 					glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
 				}
 
-				
-			}
-		}
-			break;
-		case 3: {
 
+			}
 		}
 			break;
 		}
