@@ -62,6 +62,11 @@ namespace globalVariables {
 }
 namespace GV = globalVariables;
 
+namespace ContourVariables {
+	int countour = 1;
+}
+namespace CV = ContourVariables;
+
 namespace shaders {
 	int nCabinas=20;
 	float rCabinas=30.f;
@@ -76,7 +81,6 @@ namespace trump {
 	GLuint modelVao;
 	GLuint modelVbo[3];
 	glm::vec4 color={1, 0, 0, 0};
-
 
 	glm::mat4 objMat = glm::mat4(1.f);
 }
@@ -107,6 +111,15 @@ namespace noria {
 	GLuint modelVao;
 	GLuint modelVbo[3];
 	glm::vec4 color = { 196/255.f, 144 / 255.f, 204 / 255.f, 0 };
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
+
+namespace contourTrump {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+	glm::vec4 color = { 0, 0, 0, 0 };
+
 
 	glm::mat4 objMat = glm::mat4(1.f);
 }
@@ -167,7 +180,7 @@ void GUI() {
 				else if (GV::bulbState == 2)
 					ImGui::Text("B key to Bulb Light: On (Pendulum)");
 			}
-				break;
+			break;
 		case 5: //global scene composition
 			switch (GV::cameraCounter) {
 			case 0:
@@ -210,8 +223,25 @@ void GUI() {
 				ImGui::Text("T key to Toon Shading: Exercise 9 , 10 and 11 (Toon Shading Off)");
 			}
 			break;
+		case 7: //contour shading
+			if (GV::toonShading == 0) {
+				ImGui::Text("T key to Contour Shading: Exercise 12 (Trump Contour)");
+			}
+			switch (GV::cameraCounter) {
+			case 0:
+				ImGui::Text("Current Camera: General Shot");
+				break;
+			case 1:
+				ImGui::Text("Current Camera: Shot Counter Shot");
+				break;
+			case 2:
+				ImGui::Text("Current Camera: Lateral View");
+				break;
+			case 3:
+				ImGui::Text("Current Camera: Rotating God's Eye Shot");
+				break;
+			}
 		}
-
 	}
 	// .........................
 
@@ -339,7 +369,7 @@ void GLinit(int width, int height) {
 
 	bool res = loadOBJ("trump.obj", vertices, uvs, normals);
 	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 80;
+			vertices.at(i) /= 80;
 	}
 	MyLoadedModel::setupModel(0);
 
@@ -394,6 +424,19 @@ void GLinit(int width, int height) {
 		vertices.at(i) /= 92.5f;
 	}
 	MyLoadedModel::setupModel(4);
+
+	vertices.clear();
+	vertices.shrink_to_fit();
+	normals.clear();
+	normals.shrink_to_fit();
+	uvs.clear();
+	uvs.shrink_to_fit();
+
+	res = loadOBJ("trump.obj", vertices, uvs, normals);
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices.at(i) /= 78;
+	}
+	MyLoadedModel::setupModel(5);
 
 	Sphere::setupSphere(moonPos, 1.0f);
 	Cube::setupCube();
@@ -633,6 +676,17 @@ void GLrender(double currentTime) {
 			MyLoadedModel::drawModel(2, i);
 	}
 			break;
+	case 7:
+		sun::color = sun::ambient = moon::color = bulb::color = { 1, 1, 1, 0 };
+
+		MyLoadedModel::drawModel(5);
+		MyLoadedModel::drawModel(0);
+		MyLoadedModel::drawModel(1);
+		MyLoadedModel::drawModel(3);
+		MyLoadedModel::drawModel(4);
+		for (int i = 0; i < shaders::nCabinas; ++i)
+			MyLoadedModel::drawModel(2, i);
+		break;
 	}
 	ImGui::Render();
 }
@@ -1530,6 +1584,23 @@ namespace MyLoadedModel {
 			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 			glEnableVertexAttribArray(1);
 			break;
+		case 5:
+			glGenVertexArrays(1, &contourTrump::modelVao);
+			glBindVertexArray(contourTrump::modelVao);
+			glGenBuffers(3, contourTrump::modelVbo);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourTrump::modelVbo[0]);
+
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourTrump::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
 		}
 	
 
@@ -1571,7 +1642,12 @@ namespace MyLoadedModel {
 			glDeleteBuffers(2, noria::modelVbo);
 			glDeleteVertexArrays(1, &noria::modelVao);
 			break;
+		case 5:
+			glDeleteBuffers(2, contourTrump::modelVbo);
+			glDeleteVertexArrays(1, &contourTrump::modelVao);
+			break;
 		}
+
 		glDeleteProgram(modelProgram);
 		glDeleteShader(modelShaders[0]);
 		glDeleteShader(modelShaders[1]);
@@ -1592,6 +1668,9 @@ namespace MyLoadedModel {
 			break;
 		case 4:
 			noria::objMat = transform;
+			break;
+		case 5:
+			contourTrump::objMat = transform;
 			break;
 		}
 	}
@@ -1627,6 +1706,11 @@ namespace MyLoadedModel {
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(noria::objMat));
 			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), noria::color.x, noria::color.y, noria::color.z, noria::color.a);
 			break;
+		case 5:
+			glBindVertexArray(contourTrump::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourTrump::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourTrump::color.x, contourTrump::color.y, contourTrump::color.z, contourTrump::color.a);
 		}
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
@@ -2259,6 +2343,110 @@ void main() {\n\
 				}
 			}
 			break;
+		case 7: { //CONTOUR SHADING
+			counter += GV::dt;
+			RV::_modelView = glm::mat4(1.f);
+			RV::_modelView = glm::rotate(RV::_modelView, glm::radians(20.f), glm::vec3(1.f, 0.f, 0.f));
+
+
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
+					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
+				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
+
+				//CÁMARA
+				switch (GV::cameraCounter) {
+				case 0://GENERAL SHOT
+					RV::_modelView = glm::mat4(1.f);
+					RV::_modelView = glm::translate(RV::_modelView, glm::vec3(7, 3, -60));
+					RV::_modelView = glm::rotate(RV::_modelView, glm::radians(30.f), glm::vec3(0.f, 1.f, 0.f));
+					RV::_MVP = RV::_projection*RV::_modelView;
+					break;
+				case 1://SHOT COUNTER SHOT
+					if (i == shaders::nCabinas / 2) {
+						if (counter < 2) {//POLLO
+							RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(3, 2, 3));
+							RV::_modelView *= glm::rotate(glm::mat4(1.f), glm::radians(65.f), glm::vec3(0, 1, 0));
+							RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(2, 0, 0));
+						}
+						else if (counter < 4) {//TRUMP
+							RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(-3, 1, 3));
+							RV::_modelView *= glm::rotate(glm::mat4(1.f), glm::radians(-75.f), glm::vec3(0, 1, 0));
+							RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(-3, 0, 1));
+						}
+						else
+							counter = 0;
+
+						RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, -5)) * myObjMat;
+						RV::_MVP = RV::_projection*RV::_modelView;
+					}
+					break;
+				case 2://LATERAL VIEW
+					RV::_modelView = glm::mat4(1.f);
+					RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, 0, -70));
+					RV::_MVP = RV::_projection*RV::_modelView;
+					break;
+				case 3://ROTATING GOD'S EYE SHOT
+					if (i == shaders::nCabinas / 2) {
+
+						RV::_modelView *= glm::translate(glm::mat4(1.0f), glm::vec3(0, -1, -0.6));
+						RV::_modelView *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(1, 0, 0));
+						RV::_modelView *= glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 50), glm::vec3(0, 1, 0));
+						RV::_modelView *= myObjMat;
+
+						RV::_MVP = RV::_projection*RV::_modelView;
+					}
+					break;
+				}
+
+
+
+				if (GV::models) {
+					//CABINAS
+					MyLoadedModel::updateModel(myObjMat, 2, i);
+
+					if (i == 0) {
+						//CONTOUR TRUMP
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
+						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 5);
+
+						//TRUMP
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0.05));
+						//myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 0);
+
+						//GALLINA
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
+						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 1);
+
+						//PIES NORIA
+						glm::mat4 myNoriaMat = glm::translate(glm::mat4(1), glm::vec3(0, 0, 0));
+						MyLoadedModel::updateModel(myNoriaMat, 3);
+
+						//RUEDA NORIA
+						myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
+						MyLoadedModel::updateModel(myNoriaMat, 4);
+					}
+				}
+
+
+				else {
+					//CUBOS
+					myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
+					glUniform1f(glGetUniformLocation(cubeProgram, "radius"), Cube::halfW * 20);
+					glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
+					glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
+				}
+
+
+			}
+		}
+				break;
 		}		
 
 		glUseProgram(0);
