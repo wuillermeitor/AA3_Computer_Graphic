@@ -54,6 +54,7 @@ namespace globalVariables {
 	bool models = true;
 	bool pressed = false;
 	int bulbState = 0;
+	int toonShading = 3;
 	glm::vec4 modelColor;
 	float lastTime=0;
 	float dt=0;
@@ -180,6 +181,30 @@ void GUI() {
 			}
 			break;
 		case 6: //toon shading exercises
+			if (light_moves)
+				ImGui::Text("D key to Day-Night Transition is: On");
+			else {
+				ImGui::Text("D key to Day-Night Transition is: Off");
+
+				if (GV::bulbState == 0)
+					ImGui::Text("B key to Bulb Light: On (Static)");
+				else if (GV::bulbState == 1)
+					ImGui::Text("B key to Bulb Light: Off");
+				else if (GV::bulbState == 2)
+					ImGui::Text("B key to Bulb Light: On (Pendulum)");
+			}
+			if (GV::toonShading == 0) {
+				ImGui::Text("T key to Toon Shading: Exercise 9 (Only Sun)");
+			}
+			else if (GV::toonShading == 1) {
+				ImGui::Text("T key to Toon Shading: Exercise 10 (Sun and Moon)");
+			}
+			else if (GV::toonShading == 2) {
+				ImGui::Text("T key to Toon Shading: Exercise 11 (Night Illumination and Bulb Light)");
+			}
+			else if (GV::toonShading == 3) {
+				ImGui::Text("T key to Toon Shading: Exercise 9 , 10 and 11 (Toon Shading Off)");
+			}
 			break;
 		}
 
@@ -399,7 +424,7 @@ void GLrender(double currentTime) {
 		MyLoadedModel::drawModel(1);
 		MyLoadedModel::drawModel(3);
 		MyLoadedModel::drawModel(4);
-		for (int i = 0; i<shaders::nCabinas; ++i)
+		for (int i = 0; i < shaders::nCabinas; ++i)
 			MyLoadedModel::drawModel(2, i);
 		break;
 	case 3: //noria de modelos + movimientos de cámara
@@ -410,7 +435,7 @@ void GLrender(double currentTime) {
 		MyLoadedModel::drawModel(1);
 		MyLoadedModel::drawModel(3);
 		MyLoadedModel::drawModel(4);
-		for(int i=0; i<shaders::nCabinas; ++i)
+		for (int i = 0; i < shaders::nCabinas; ++i)
 			MyLoadedModel::drawModel(2, i);
 		break;
 	case 4: { //noria de modelos + fuentes de luz
@@ -460,7 +485,7 @@ void GLrender(double currentTime) {
 			//bulb
 			if (GV::bulbState == 2) { //if pendulo
 				bulb::pos.y += -glm::abs(cos(currentTime)) * 10;
-				bulb::pos.x += sin(currentTime)*20;
+				bulb::pos.x += sin(currentTime) * 20;
 			}
 
 			//COLORES
@@ -480,7 +505,7 @@ void GLrender(double currentTime) {
 			Sphere::updateSphere(sun::pos, 1.f);
 			Sphere::drawSphere();
 		}
-		else if(GV::bulbState == 0 || GV::bulbState==2){ //bulb
+		else if (GV::bulbState == 0 || GV::bulbState == 2) { //bulb
 			Sphere::updateSphere(bulb::pos, .25f);
 			Sphere::drawSphere();
 		}
@@ -494,36 +519,115 @@ void GLrender(double currentTime) {
 		MyLoadedModel::drawModel(1);
 		MyLoadedModel::drawModel(3);
 		MyLoadedModel::drawModel(4);
-		for (int i = 0; i<shaders::nCabinas; ++i)
+		for (int i = 0; i < shaders::nCabinas; ++i)
 			MyLoadedModel::drawModel(2, i);
 	}
-		break;
+			break;
 	case 5: //global scene composition
 
 		sun::color = sun::ambient = moon::color = bulb::color = { 1, 1, 1, 0 };
-		
+
 		MyLoadedModel::drawModel(0);
 		MyLoadedModel::drawModel(1);
 		MyLoadedModel::drawModel(3);
 		MyLoadedModel::drawModel(4);
-		for (int i = 0; i<shaders::nCabinas; ++i)
+		for (int i = 0; i < shaders::nCabinas; ++i)
 			MyLoadedModel::drawModel(2, i);
 
 		noriaRelocateEx5(currentTime, 65);
 
 		MyLoadedModel::drawModel(3);
 		MyLoadedModel::drawModel(4);
-		for (int i = 0; i<shaders::nCabinas; ++i)
+		for (int i = 0; i < shaders::nCabinas; ++i)
 			MyLoadedModel::drawModel(2, i);
 
 		break;
-	case 6: //toon shading exercises
-		break;
+	case 6: {//toon shading exercises
+			//time giratorio
+		if (light_moves) {
+			timeGiratorio += GV::dt;
+		}
+		//ACTUALIZAR POSICIÓN Y COLOR DE LOS ASTROS
+		float circleRad = 40;
+		float ySinSol = sin(glm::radians((float)(timeGiratorio / sun::period) * 360));
+		float zCosSol = cos(glm::radians((float)(timeGiratorio / sun::period) * 360));
+		float ySinLuna = sin(glm::radians((float)(timeGiratorio / moon::period) * 360));
+		float zCosLuna = cos(glm::radians((float)(timeGiratorio / moon::period) * 360));
+
+		if (light_moves) {
+			//POSICIONES EN FUNCIÓN DEL SENO Y COSENO DE SOL Y LUNA
+			moon::pos = glm::rotate(glm::mat4(1), glm::radians(135.f), glm::vec3(0, 1, 0)) * glm::vec4(0, ySinLuna*circleRad, zCosLuna*circleRad, 1);
+			sun::pos = glm::vec3(0, ySinSol*circleRad, zCosSol*circleRad);
+
+			//hacemos que los senos de estos valores vayan de 0 a 2
+			ySinSol += 1;
+			zCosSol += 1;
+			ySinLuna += 1;
+
+			//COLORES EN FUNCIÓN DE LA POSICIÓN
+			//luna
+			moon::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(172.f / 255.f, 220.f / 255.f, 221.f / 255.f), ySinLuna), 0);
+
+			//sol
+			if (ySinSol < 1) {
+				sun::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), ySinSol), 0);
+				sun::ambient = DARKBLUE;
+			}
+			else {
+				sun::color = glm::vec4(glm::lerp(glm::vec3(1, 0, 0), glm::vec3(1, 1, 0.8), ySinSol - 1.f), 0);
+				sun::ambient = glm::vec4(1);
+			}
+
+			//bulb
+			bulb::color = { 0, 0, 0, 0 };
+		}
+		else {
+			//ACTUALIZACIÓN DE POSICIONES
+
+			//sol nada
+			//luna nada
+			//bulb
+			if (GV::bulbState == 2) { //if pendulo
+				bulb::pos.y += -glm::abs(cos(currentTime)) * 10;
+				bulb::pos.x += sin(currentTime) * 20;
+			}
+
+			//COLORES
+
+			//luna
+			moon::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(172.f / 255.f, 220.f / 255.f, 221.f / 255.f), ySinLuna), 0);
+			//sol
+			sun::color = glm::vec4(0);
+			//bulb
+			bulb::color = { 0, 1, 0, 0 };
+			//ambient
+			sun::ambient = DARKBLUE;
+		}
+
+		//DRAW
+		if (light_moves) { //sol
+			Sphere::updateSphere(sun::pos, 1.f);
+			Sphere::drawSphere();
+		}
+		else if (GV::bulbState == 0 || GV::bulbState == 2) { //bulb
+			Sphere::updateSphere(bulb::pos, .25f);
+			Sphere::drawSphere();
+		}
+		//luna
+		Sphere::updateSphere(moon::pos, 1.f);
+		Sphere::drawSphere();
+
+
+		//modelos
+		MyLoadedModel::drawModel(0);
+		MyLoadedModel::drawModel(1);
+		MyLoadedModel::drawModel(3);
+		MyLoadedModel::drawModel(4);
+		for (int i = 0; i < shaders::nCabinas; ++i)
+			MyLoadedModel::drawModel(2, i);
 	}
-
-	std::cout << "bulb pos: " << bulb::pos.r << " " << bulb::pos.g << " " << bulb::pos.b << std::endl;
-	
-
+			break;
+	}
 	ImGui::Render();
 }
 
@@ -1223,13 +1327,13 @@ void drawClothMesh() {
 
 ////////////////////////////////////////////////// MyModel
 namespace MyLoadedModel {
-	
+
 
 	GLuint modelShaders[2];
 	GLuint modelProgram;
 
 
-	
+
 	const char* model_vertShader =
 		"#version 330\n\
 	in vec3 in_Position;\n\
@@ -1255,6 +1359,7 @@ namespace MyLoadedModel {
 
 	const char* model_fragShader =
 		"#version 330\n\
+		uniform int toonShading; \n\
 		in vec4 vert_Normal;\n\
 		in vec3 lDir;\n\
 		in vec3 lDir2;\n\
@@ -1267,6 +1372,47 @@ namespace MyLoadedModel {
 		uniform vec4 color3;\n\
 		uniform vec4 ambient;\n\
 		void main() {\n\
+			if (toonShading == 3){ \n\
+				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+				float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+			}\n\
+			else if (toonShading == 0){\n\
+				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+				if(U<0.2) U=0.2;\n\
+				else if(U>=0.2 && U<0.4) U=0.4;\n\
+				else if(U>=0.4 && U<0.5) U=0.6;\n\
+				else if(U>=0.5) U=1;\n\
+				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 )));\n\
+			}\n\
+			else if (toonShading == 1){\n\
+				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+				if(U<0.2) U=0.2;\n\
+				else if(U>=0.2 && U<0.4) U=0.4;\n\
+				else if(U>=0.4 && U<0.5) U=0.6;\n\
+				else if(U>=0.5) U=1;\n\
+				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+				if(U2<0.2) U2=0.2;\n\
+				else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
+				else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
+				else if(U2>=0.5) U2=1;\n\
+				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0)));\n\
+			}\n\
+			else if (toonShading == 2){\n\
+				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+				if(U2<0.2) U2=0.2;\n\
+				else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
+				else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
+				else if(U2>=0.5) U2=1;\n\
+				float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+				if(U3<0.2) U3=0.2;\n\
+				else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
+				else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
+				else if(U3>=0.5) U3=1;\n\
+				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+			}\n\
+			else{\n\
 			float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
 			if(U<0.2) U=0.2;\n\
 			else if(U>=0.2 && U<0.4) U=0.4;\n\
@@ -1287,6 +1433,7 @@ namespace MyLoadedModel {
 			\n\
 			out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
 			\n\
+			}\n\
 		}";
 	void setupModel(int model) {
 		switch (model) {
@@ -1484,6 +1631,7 @@ namespace MyLoadedModel {
 		glUniform4f(glGetUniformLocation(modelProgram, "color2"), moon::color.x, moon::color.y, moon::color.z, moon::color.a);
 		glUniform4f(glGetUniformLocation(modelProgram, "color3"), bulb::color.x, bulb::color.y, bulb::color.z, bulb::color.a);
 		glUniform4f(glGetUniformLocation(modelProgram, "ambient"), sun::ambient.x, sun::ambient.y, sun::ambient.z, sun::ambient.a);
+		glUniform1i(glGetUniformLocation(modelProgram, "toonShading"), GV::toonShading);
 	
 		glDrawArrays(GL_TRIANGLES, 0, 25000);
 
@@ -1692,7 +1840,10 @@ void main() {\n\
 		else if (keyboardState[SDL_SCANCODE_T]) { //toon shading
 			if (!GV::pressed) {
 				GV::pressed = true;
-				//logic here
+				GV::toonShading++;
+				if (GV::toonShading == 4) {
+					GV::toonShading = 0;
+				}
 			}
 		}
 		else if (keyboardState[SDL_SCANCODE_S]) { //stencil buffer
@@ -2026,6 +2177,62 @@ void main() {\n\
 
 			}
 		}
+		case 6: { //TOON SHADING
+			counter += GV::dt;
+
+			//FIX
+
+			//CÁMARA
+			RV::_modelView = glm::mat4(1);
+			RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, -10, -80));
+			RV::_modelView = glm::rotate(RV::_modelView, glm::radians(30.f), glm::vec3(1.f, 0.f, 0.f));
+			RV::_MVP = RV::_projection*RV::_modelView;
+
+
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glm::vec3 posiciones = { shaders::rCabinas * cos((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas),
+					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
+				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
+
+				if (GV::models) {
+					//CABINAS
+					MyLoadedModel::updateModel(myObjMat, 2, i);
+
+					if (i == 0) {
+						//TRUMP
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
+						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 0);
+
+						//GALLINA
+						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
+						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
+						MyLoadedModel::updateModel(myObjMat, 1);
+
+						//RUEDA NORIA
+						glm::mat4 myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
+						MyLoadedModel::updateModel(myNoriaMat, 4);
+						
+						//EM DONA ERROR POSAR ELS PEUS DE LA NORIA
+					}
+				}
+
+
+				else {
+					//CUBOS
+					myObjMat *= glm::scale(glm::mat4(1.0f), glm::vec3(4, 4, 4));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(myObjMat));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
+					glUniformMatrix4fv(glGetUniformLocation(cubeProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
+					glUniform1f(glGetUniformLocation(cubeProgram, "radius"), Cube::halfW * 20);
+					glUniform4f(glGetUniformLocation(cubeProgram, "color"), 0.1f, 1.f, 1.f, 0.f);
+					glDrawElements(GL_TRIANGLE_STRIP, numVerts, GL_UNSIGNED_BYTE, 0);
+				}
+
+
+			}
+		}
+				break;
 			break;
 		}
 		
