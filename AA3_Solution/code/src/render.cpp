@@ -458,7 +458,7 @@ void GLcleanup() {
 static double timeGiratorio = 0;
 void GLrender(double currentTime) {
 
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
+	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT | GL_STENCIL_BUFFER_BIT);
 
 	Cube::drawCube(currentTime);
 
@@ -533,8 +533,8 @@ void GLrender(double currentTime) {
 			//luna nada
 			//bulb
 			if (GV::bulbState == 2) { //if pendulo
-				bulb::pos.y += -glm::abs(cos(currentTime)) * 10;
-				bulb::pos.x += sin(currentTime) * 20;
+				bulb::pos.y += -glm::abs(cos(currentTime)) * 5.f;
+				bulb::pos.z += sin(currentTime) * 10;
 			}
 
 			//COLORES
@@ -544,7 +544,12 @@ void GLrender(double currentTime) {
 			//sol
 			sun::color = glm::vec4(0);
 			//bulb
-			bulb::color = { 0, 1, 0, 0 };
+			if (GV::bulbState == 1) {
+				bulb::color = glm::vec4(0.f);
+			}
+			else {
+				bulb::color = { 0, 1, 0, 0 };
+			}
 			//ambient
 			sun::ambient = DARKBLUE;
 		}
@@ -555,7 +560,7 @@ void GLrender(double currentTime) {
 			Sphere::drawSphere();
 		}
 		else if (GV::bulbState == 0 || GV::bulbState == 2) { //bulb
-			Sphere::updateSphere(bulb::pos, .25f);
+			Sphere::updateSphere(bulb::pos, .5f);
 			Sphere::drawSphere();
 		}
 		//luna
@@ -574,12 +579,15 @@ void GLrender(double currentTime) {
 			break;
 	case 5: //global scene composition
 
+
+
 		sun::color = sun::ambient = moon::color = bulb::color = { 1, 1, 1, 0 };
 
 		MyLoadedModel::drawModel(0);
 		MyLoadedModel::drawModel(1);
-		MyLoadedModel::drawModel(3);
 		MyLoadedModel::drawModel(4);
+		MyLoadedModel::drawModel(3);
+		
 		for (int i = 0; i < shaders::nCabinas; ++i)
 			MyLoadedModel::drawModel(2, i);
 
@@ -618,17 +626,22 @@ void GLrender(double currentTime) {
 			moon::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(172.f / 255.f, 220.f / 255.f, 221.f / 255.f), ySinLuna), 0);
 
 			//sol
-			if (ySinSol < 1) {
-				sun::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), ySinSol), 0);
+			if (GV::toonShading == 2) {
+				bulb::pos.y += -glm::abs(cos(currentTime)) * 10;
+				bulb::pos.x += sin(currentTime) * 20;
+				bulb::color = { 0, 1, 0, 0 };
 				sun::ambient = DARKBLUE;
 			}
 			else {
-				sun::color = glm::vec4(glm::lerp(glm::vec3(1, 0, 0), glm::vec3(1, 1, 0.8), ySinSol - 1.f), 0);
-				sun::ambient = glm::vec4(1);
+				if (ySinSol < 1) {
+					sun::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(1, 0, 0), ySinSol), 0);
+					sun::ambient = DARKBLUE;
+				}
+				else {
+					sun::color = glm::vec4(glm::lerp(glm::vec3(1, 0, 0), glm::vec3(1, 1, 0.5f), ySinSol - 1.f), 0);
+					sun::ambient = glm::vec4(1);
+				}
 			}
-
-			//bulb
-			bulb::color = { 0, 0, 0, 0 };
 		}
 		else {
 			//ACTUALIZACIÓN DE POSICIONES
@@ -679,13 +692,30 @@ void GLrender(double currentTime) {
 	case 7:
 		sun::color = sun::ambient = moon::color = bulb::color = { 1, 1, 1, 0 };
 
-		MyLoadedModel::drawModel(5);
-		MyLoadedModel::drawModel(0);
-		MyLoadedModel::drawModel(1);
+		glEnable(GL_STENCIL_TEST);
+		glEnable(GL_DEPTH_TEST);
+		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+
+		glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
 		MyLoadedModel::drawModel(3);
 		MyLoadedModel::drawModel(4);
 		for (int i = 0; i < shaders::nCabinas; ++i)
 			MyLoadedModel::drawModel(2, i);
+		MyLoadedModel::drawModel(1);
+
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
+		MyLoadedModel::drawModel(0);
+
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00);
+		glDisable(GL_DEPTH_TEST);
+		MyLoadedModel::drawModel(5);
+		glStencilMask(0xFF);
+
+		glEnable(GL_DEPTH_TEST);
+		glDisable(GL_STENCIL_TEST);
+
 		break;
 	}
 	ImGui::Render();
@@ -2406,13 +2436,17 @@ void main() {\n\
 					MyLoadedModel::updateModel(myObjMat, 2, i);
 
 					if (i == 0) {
+						glm::vec4 tmpC = glm::vec4(0.f, 0.f, 0.1f, 1.f);
 						//CONTOUR TRUMP
 						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
 						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
-						MyLoadedModel::updateModel(myObjMat, 5);
+						glm::mat4 contourTrump(1.f);
+						contourTrump = glm::translate(myObjMat, glm::vec3(0, -.1, 0));
+						contourTrump = glm::scale(contourTrump, glm::vec3(1.05f));
+						MyLoadedModel::updateModel(contourTrump, 5);
 
 						//TRUMP
-						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0.05));
+						/*myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0.05));*/
 						//myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
 						MyLoadedModel::updateModel(myObjMat, 0);
 

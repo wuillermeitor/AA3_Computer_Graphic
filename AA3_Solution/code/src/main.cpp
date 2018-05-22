@@ -28,7 +28,7 @@ extern void myRenderCode(double currentTime);
 namespace {
 	const int expected_fps = 30;
 	const double expected_frametime = 1.0 / expected_fps;
-	const uint32_t expected_frametime_ms = (uint32_t) (1e3 * expected_frametime);
+	const uint32_t expected_frametime_ms = (uint32_t)(1e3 * expected_frametime);
 	uint32_t prev_frametimestamp = 0;
 	uint32_t curr_frametimestamp = 0;
 
@@ -38,7 +38,7 @@ namespace {
 		if ((curr_frametimestamp - prev_frametimestamp) < expected_frametime_ms) {
 			wait = expected_frametime_ms - (curr_frametimestamp - prev_frametimestamp);
 		}
-		if(wait > 0) {
+		if (wait > 0) {
 			Sleep(wait);
 		}
 		prev_frametimestamp = SDL_GetTicks();
@@ -62,21 +62,22 @@ int main(int argc, char** argv) {
 	SDL_GL_SetAttribute(SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE);
 	SDL_GL_SetAttribute(SDL_GL_DOUBLEBUFFER, 1);
 	SDL_GL_SetAttribute(SDL_GL_DEPTH_SIZE, 24);
+	SDL_GL_SetAttribute(SDL_GL_STENCIL_SIZE, 8);
 
 	mainwindow = SDL_CreateWindow("GL_framework", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED,
 		800, 600, SDL_WINDOW_OPENGL | SDL_WINDOW_SHOWN | SDL_WINDOW_RESIZABLE);
-		if (!mainwindow) { /* Die if creation failed */
-			SDL_Log("Couldn't create SDL window: %s", SDL_GetError());
-			SDL_Quit();
-			return -1;
-		}
+	if (!mainwindow) { /* Die if creation failed */
+		SDL_Log("Couldn't create SDL window: %s", SDL_GetError());
+		SDL_Quit();
+		return -1;
+	}
 
 	/* Create our opengl context and attach it to our window */
 	maincontext = SDL_GL_CreateContext(mainwindow);
 
 	// Init GLEW
 	GLenum err = glewInit();
-	if(GLEW_OK != err) {
+	if (GLEW_OK != err) {
 		SDL_Log("Glew error: %s\n", glewGetErrorString(err));
 	}
 	SDL_Log("Status: Using GLEW %s\n", glewGetString(GLEW_VERSION));
@@ -92,7 +93,7 @@ int main(int argc, char** argv) {
 
 	//myInitCode();
 
-	
+
 	// Setup ImGui binding
 	ImGui_ImplSdlGL3_Init(mainwindow);
 
@@ -117,26 +118,26 @@ int main(int argc, char** argv) {
 		ImGui_ImplSdlGL3_NewFrame(mainwindow);
 
 		ImGuiIO& io = ImGui::GetIO();
-		
-		
+
+
 		GUI();
 		//PhysicsUpdate((float)expected_frametime);
-		if(!io.WantCaptureMouse) {
-			MouseEvent ev = {io.MousePos.x, io.MousePos.y, 
-				(io.MouseDown[0] ? MouseEvent::Button::Left : 
+		if (!io.WantCaptureMouse) {
+			MouseEvent ev = { io.MousePos.x, io.MousePos.y,
+				(io.MouseDown[0] ? MouseEvent::Button::Left :
 				(io.MouseDown[1] ? MouseEvent::Button::Right :
-				(io.MouseDown[2] ? MouseEvent::Button::Middle :
-				MouseEvent::Button::None)))};
+					(io.MouseDown[2] ? MouseEvent::Button::Middle :
+						MouseEvent::Button::None))) };
 			GLmousecb(ev);
 		}
 
 
 		double currentTime = (double)SDL_GetTicks() / 1000.0;
 		GLrender(currentTime);
-		
+
 		//double currentTime = (double) SDL_GetTicks() / 1000.0;
 		//myRenderCode(currentTime);
-		
+
 
 
 		SDL_GL_SwapWindow(mainwindow);
