@@ -55,6 +55,7 @@ namespace globalVariables {
 	bool pressed = false;
 	int bulbState = 0;
 	int toonShading = 3;
+	int contourShading = 0;
 	glm::vec4 modelColor;
 	float lastTime=0;
 	float dt=0;
@@ -116,6 +117,40 @@ namespace noria {
 }
 
 namespace contourTrump {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+	glm::vec4 color = { 0, 0, 0, 0 };
+
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
+
+namespace contourChicken {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+	glm::vec4 color = { 0, 0, 0, 0 };
+
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
+
+namespace contourCabina {
+	GLuint* modelVao = new GLuint[shaders::nCabinas];
+	GLuint* modelVbo = new GLuint[shaders::nCabinas * 3];
+
+	glm::mat4* objMat = new glm::mat4[shaders::nCabinas];
+}
+
+namespace contourPata {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+	glm::vec4 color = { 0, 0, 0, 0 };
+
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
+
+namespace contourNoria {
 	GLuint modelVao;
 	GLuint modelVbo[3];
 	glm::vec4 color = { 0, 0, 0, 0 };
@@ -224,8 +259,14 @@ void GUI() {
 			}
 			break;
 		case 7: //contour shading
-			if (GV::toonShading == 0) {
+			if (GV::contourShading == 0) {
 				ImGui::Text("T key to Contour Shading: Exercise 12 (Trump Contour)");
+			}
+			else if (GV::contourShading == 1) {
+				ImGui::Text("T key to Contour Shading: Exercise 13 (Highlight Contour and Toon Shader)");
+			}
+			else if (GV::contourShading == 2) {
+				ImGui::Text("T key to Contour Shading: Exercise 14 (3D characters thicker contour)");
 			}
 			switch (GV::cameraCounter) {
 			case 0:
@@ -438,8 +479,67 @@ void GLinit(int width, int height) {
 	}
 	MyLoadedModel::setupModel(5);
 
+	vertices.clear();
+	vertices.shrink_to_fit();
+	normals.clear();
+	normals.shrink_to_fit();
+	uvs.clear();
+	uvs.shrink_to_fit();
+
+	res = loadOBJ("chicken.obj", vertices, uvs, normals);
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices.at(i) /= 60;
+	}
+	MyLoadedModel::setupModel(6);
+
+	vertices.clear();
+	vertices.shrink_to_fit();
+	normals.clear();
+	normals.shrink_to_fit();
+	uvs.clear();
+	uvs.shrink_to_fit();
+
+	res = loadOBJ("NoriaCabina.obj", vertices, uvs, normals);
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices.at(i) /= 180;
+	}
+	MyLoadedModel::setupModel(7);
+
+	vertices.clear();
+	vertices.shrink_to_fit();
+	normals.clear();
+	normals.shrink_to_fit();
+	uvs.clear();
+	uvs.shrink_to_fit();
+
+	res = loadOBJ("NoriaFeet.obj", vertices, uvs, normals);
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices.at(i) /= 92.5f;
+	}
+	MyLoadedModel::setupModel(8);
+
+	vertices.clear();
+	vertices.shrink_to_fit();
+	normals.clear();
+	normals.shrink_to_fit();
+	uvs.clear();
+	uvs.shrink_to_fit();
+
+	res = loadOBJ("NoriaRueda.obj", vertices, uvs, normals);
+	for (int i = 0; i < vertices.size(); ++i) {
+		vertices.at(i) /= 92.5f;
+	}
+	MyLoadedModel::setupModel(9);
+
+	vertices.clear();
+	vertices.shrink_to_fit();
+	normals.clear();
+	normals.shrink_to_fit();
+	uvs.clear();
+	uvs.shrink_to_fit();
 	Sphere::setupSphere(moonPos, 1.0f);
 	Cube::setupCube();
+
 	moonPos = glm::vec3(40, 40, 0);
 
 }
@@ -695,23 +795,44 @@ void GLrender(double currentTime) {
 		glEnable(GL_STENCIL_TEST);
 		glEnable(GL_DEPTH_TEST);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		if (GV::contourShading == 0) {//ONLY TRUMP
+			glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
+			MyLoadedModel::drawModel(3);
+			MyLoadedModel::drawModel(4);
+			for (int i = 0; i < shaders::nCabinas; ++i)
+				MyLoadedModel::drawModel(2, i);
+			MyLoadedModel::drawModel(1);
 
-		glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
-		MyLoadedModel::drawModel(3);
-		MyLoadedModel::drawModel(4);
-		for (int i = 0; i < shaders::nCabinas; ++i)
-			MyLoadedModel::drawModel(2, i);
-		MyLoadedModel::drawModel(1);
+			glStencilFunc(GL_ALWAYS, 1, 0xFF);
+			glStencilMask(0xFF);
+			MyLoadedModel::drawModel(0);
 
-		glStencilFunc(GL_ALWAYS, 1, 0xFF);
-		glStencilMask(0xFF);
-		MyLoadedModel::drawModel(0);
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+			glStencilMask(0x00);
+			glDisable(GL_DEPTH_TEST);
+			contourTrump::color = { 0, 0, 0, 0 };
+			MyLoadedModel::drawModel(5);
+			glStencilMask(0xFF);
+		}
+		else if (GV::contourShading == 1) {//TRUMP CON HIGHLIGHT
+			glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
+			MyLoadedModel::drawModel(3);
+			MyLoadedModel::drawModel(4);
+			for (int i = 0; i < shaders::nCabinas; ++i)
+				MyLoadedModel::drawModel(2, i);
+			MyLoadedModel::drawModel(1);
 
-		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-		glStencilMask(0x00);
-		glDisable(GL_DEPTH_TEST);
-		MyLoadedModel::drawModel(5);
-		glStencilMask(0xFF);
+			glStencilFunc(GL_ALWAYS, 1, 0xFF);
+			glStencilMask(0xFF);
+			MyLoadedModel::drawModel(0);
+
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+			glStencilMask(0x00);
+			glDisable(GL_DEPTH_TEST);
+			contourTrump::color = { 1, 1, 0, 0 };
+			MyLoadedModel::drawModel(5);
+			glStencilMask(0xFF);
+		}
 
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_STENCIL_TEST);
@@ -1450,6 +1571,9 @@ namespace MyLoadedModel {
 	const char* model_fragShader =
 		"#version 330\n\
 		uniform int toonShading; \n\
+		uniform int contourShading; \n\
+		uniform int currentEx; \n\
+		uniform int currentModel; \n\
 		in vec4 vert_Normal;\n\
 		in vec3 lDir;\n\
 		in vec3 lDir2;\n\
@@ -1457,72 +1581,90 @@ namespace MyLoadedModel {
 		out vec4 out_Color;\n\
 		uniform mat4 mv_Mat;\n\
 		uniform vec4 modelcolor;\n\
+		uniform vec4 contourColor;\n\
 		uniform vec4 color;\n\
 		uniform vec4 color2;\n\
 		uniform vec4 color3;\n\
 		uniform vec4 ambient;\n\
 		void main() {\n\
-			if (toonShading == 3){ \n\
+			if(currentModel>=5){\n\
+				out_Color = vec4(modelcolor.xyz, 1.0); \n\
+			}\n\
+			if(currentEx==6){\n\
+				if (toonShading == 3){ \n\
+					float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+					float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+					float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+				}\n\
+				else if (toonShading == 0){\n\
+					float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+					if(U<0.2) U=0.2;\n\
+					else if(U>=0.2 && U<0.4) U=0.4;\n\
+					else if(U>=0.4 && U<0.5) U=0.6;\n\
+					else if(U>=0.5) U=1;\n\
+					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 )));\n\
+				}\n\
+				else if (toonShading == 1){\n\
+					float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+					if(U<0.2) U=0.2;\n\
+					else if(U>=0.2 && U<0.4) U=0.4;\n\
+					else if(U>=0.4 && U<0.5) U=0.6;\n\
+					else if(U>=0.5) U=1;\n\
+					float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+					if(U2<0.2) U2=0.2;\n\
+					else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
+					else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
+					else if(U2>=0.5) U2=1;\n\
+					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0)));\n\
+				}\n\
+				else if (toonShading == 2){\n\
+					float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+					if(U2<0.2) U2=0.2;\n\
+					else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
+					else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
+					else if(U2>=0.5) U2=1;\n\
+					float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+					if(U3<0.2) U3=0.2;\n\
+					else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
+					else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
+					else if(U3>=0.5) U3=1;\n\
+					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+				}\n\
+				/*else{\n\
+					float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+					if(U<0.2) U=0.2;\n\
+					else if(U>=0.2 && U<0.4) U=0.4;\n\
+					else if(U>=0.4 && U<0.5) U=0.6;\n\
+					else if(U>=0.5) U=1;\n\
+					\n\
+					float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+					if(U2<0.2) U2=0.2;\n\
+					else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
+					else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
+					else if(U2>=0.5) U2=1;\n\
+					\n\
+					float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+					if(U3<0.2) U3=0.2;\n\
+					else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
+					else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
+					else if(U3>=0.5) U3=1;\n\
+					\n\
+					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+					\n\
+				}*/\n\
+			}\n\
+			else if(currentEx==7){\n\
 				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
 				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
 				float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
 				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
 			}\n\
-			else if (toonShading == 0){\n\
-				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
-				if(U<0.2) U=0.2;\n\
-				else if(U>=0.2 && U<0.4) U=0.4;\n\
-				else if(U>=0.4 && U<0.5) U=0.6;\n\
-				else if(U>=0.5) U=1;\n\
-				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 )));\n\
-			}\n\
-			else if (toonShading == 1){\n\
-				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
-				if(U<0.2) U=0.2;\n\
-				else if(U>=0.2 && U<0.4) U=0.4;\n\
-				else if(U>=0.4 && U<0.5) U=0.6;\n\
-				else if(U>=0.5) U=1;\n\
-				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
-				if(U2<0.2) U2=0.2;\n\
-				else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
-				else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
-				else if(U2>=0.5) U2=1;\n\
-				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0)));\n\
-			}\n\
-			else if (toonShading == 2){\n\
-				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
-				if(U2<0.2) U2=0.2;\n\
-				else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
-				else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
-				else if(U2>=0.5) U2=1;\n\
-				float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
-				if(U3<0.2) U3=0.2;\n\
-				else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
-				else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
-				else if(U3>=0.5) U3=1;\n\
-				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
-			}\n\
 			else{\n\
-			float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
-			if(U<0.2) U=0.2;\n\
-			else if(U>=0.2 && U<0.4) U=0.4;\n\
-			else if(U>=0.4 && U<0.5) U=0.6;\n\
-			else if(U>=0.5) U=1;\n\
-			\n\
-			float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
-			if(U2<0.2) U2=0.2;\n\
-			else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
-			else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
-			else if(U2>=0.5) U2=1;\n\
-			\n\
-			float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
-			if(U3<0.2) U3=0.2;\n\
-			else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
-			else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
-			else if(U3>=0.5) U3=1;\n\
-			\n\
-			out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
-			\n\
+				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+				float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
 			}\n\
 		}";
 	void setupModel(int model) {
@@ -1631,6 +1773,76 @@ namespace MyLoadedModel {
 			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 			glEnableVertexAttribArray(1);
 			break;
+		case 6:
+			glGenVertexArrays(1, &contourChicken::modelVao);
+			glBindVertexArray(contourChicken::modelVao);
+			glGenBuffers(3, contourChicken::modelVbo);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourChicken::modelVbo[0]);
+
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourChicken::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
+		case 7:
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glGenVertexArrays(1, &contourCabina::modelVao[i]);
+				glBindVertexArray(contourCabina::modelVao[i]);
+				glGenBuffers(3, &contourCabina::modelVbo[i * 3]);
+
+				glBindBuffer(GL_ARRAY_BUFFER, contourCabina::modelVbo[i * 3]);
+
+				glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+				glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+				glEnableVertexAttribArray(0);
+
+				glBindBuffer(GL_ARRAY_BUFFER, contourCabina::modelVbo[i * 3 + 1]);
+
+				glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+				glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+				glEnableVertexAttribArray(1);
+			}
+			break;
+		case 8:
+			glGenVertexArrays(1, &contourPata::modelVao);
+			glBindVertexArray(contourPata::modelVao);
+			glGenBuffers(3, contourPata::modelVbo);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourPata::modelVbo[0]);
+
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourPata::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
+		case 9:
+			glGenVertexArrays(1, &contourNoria::modelVao);
+			glBindVertexArray(contourNoria::modelVao);
+			glGenBuffers(3, contourNoria::modelVbo);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourNoria::modelVbo[0]);
+
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourNoria::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
 		}
 	
 
@@ -1702,6 +1914,18 @@ namespace MyLoadedModel {
 		case 5:
 			contourTrump::objMat = transform;
 			break;
+		case 6:
+			contourChicken::objMat = transform;
+			break;
+		case 7:
+			contourCabina::objMat[cabina] = transform;
+			break;
+		case 8:
+			contourPata::objMat = transform;
+			break;
+		case 9:
+			contourNoria::objMat = transform;
+			break;
 		}
 	}
 	void drawModel(int model, int cabina) {
@@ -1741,6 +1965,30 @@ namespace MyLoadedModel {
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourTrump::objMat));
 			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourTrump::color.x, contourTrump::color.y, contourTrump::color.z, contourTrump::color.a);
+		case 6:
+			glBindVertexArray(contourChicken::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourChicken::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourChicken::color.x, contourChicken::color.y, contourChicken::color.z, contourChicken::color.a);
+			break;
+		case 7:
+			glBindVertexArray(cabina::modelVao[cabina]);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourCabina::objMat[cabina]));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourNoria::color.x, contourNoria::color.y, contourNoria::color.z, contourNoria::color.a);
+			break;
+		case 8:
+			glBindVertexArray(pata::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourPata::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourNoria::color.x, contourNoria::color.y, contourNoria::color.z, contourNoria::color.a);
+			break;
+		case 9:
+			glBindVertexArray(contourNoria::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourNoria::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourNoria::color.x, contourNoria::color.y, contourNoria::color.z, contourNoria::color.a);
+			break;
 		}
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
@@ -1752,6 +2000,9 @@ namespace MyLoadedModel {
 		glUniform4f(glGetUniformLocation(modelProgram, "color3"), bulb::color.x, bulb::color.y, bulb::color.z, bulb::color.a);
 		glUniform4f(glGetUniformLocation(modelProgram, "ambient"), sun::ambient.x, sun::ambient.y, sun::ambient.z, sun::ambient.a);
 		glUniform1i(glGetUniformLocation(modelProgram, "toonShading"), GV::toonShading);
+		glUniform1i(glGetUniformLocation(modelProgram, "contourShading"), GV::contourShading);
+		glUniform1i(glGetUniformLocation(modelProgram, "currentEx"), GV::exCounter);
+		glUniform1i(glGetUniformLocation(modelProgram, "currentModel"), model);
 	
 		glDrawArrays(GL_TRIANGLES, 0, 25000);
 
@@ -1958,11 +2209,22 @@ void main() {\n\
 			}
 		}
 		else if (keyboardState[SDL_SCANCODE_T]) { //toon shading
-			if (!GV::pressed) {
-				GV::pressed = true;
-				GV::toonShading++;
-				if (GV::toonShading == 4) {
-					GV::toonShading = 0;
+			if (GV::exCounter == 6) {
+				if (!GV::pressed) {
+					GV::pressed = true;
+					GV::toonShading++;
+					if (GV::toonShading == 4) {
+						GV::toonShading = 0;
+					}
+				}
+			}
+			else if (GV::exCounter == 7) {
+				if (!GV::pressed) {
+					GV::pressed = true;
+					GV::contourShading++;
+					if (GV::contourShading == 3) {
+						GV::contourShading = 0;
+					}
 				}
 			}
 		}
@@ -2432,35 +2694,51 @@ void main() {\n\
 
 
 				if (GV::models) {
+					//CONTOUR CABINAS
+					glm::mat4 contourNoriaCabin(1.f);
+					contourNoriaCabin = glm::translate(myObjMat, glm::vec3(0, -.08, 0));
+					contourNoriaCabin = glm::scale(contourNoriaCabin, glm::vec3(1.03f));
+					MyLoadedModel::updateModel(contourNoriaCabin, 7, i);
 					//CABINAS
 					MyLoadedModel::updateModel(myObjMat, 2, i);
 
 					if (i == 0) {
-						glm::vec4 tmpC = glm::vec4(0.f, 0.f, 0.1f, 1.f);
 						//CONTOUR TRUMP
 						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
 						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
 						glm::mat4 contourTrump(1.f);
-						contourTrump = glm::translate(myObjMat, glm::vec3(0, -.1, 0));
-						contourTrump = glm::scale(contourTrump, glm::vec3(1.05f));
+						contourTrump = glm::translate(myObjMat, glm::vec3(0, -.08, 0));
+						contourTrump = glm::scale(contourTrump, glm::vec3(1.03f));
 						MyLoadedModel::updateModel(contourTrump, 5);
-
 						//TRUMP
-						/*myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 0.05));*/
-						//myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
 						MyLoadedModel::updateModel(myObjMat, 0);
 
-						//GALLINA
+						//CONTOUR GALLINA
 						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
 						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
+						glm::mat4 contourGallina(1.f);
+						contourGallina = glm::translate(myObjMat, glm::vec3(0, -.08, 0));
+						contourGallina = glm::scale(contourGallina, glm::vec3(1.03f));
+						MyLoadedModel::updateModel(contourGallina, 6);
+						//GALLINA
 						MyLoadedModel::updateModel(myObjMat, 1);
 
-						//PIES NORIA
+						//CONTOUR PIES NORIA
 						glm::mat4 myNoriaMat = glm::translate(glm::mat4(1), glm::vec3(0, 0, 0));
+						glm::mat4 contourNoriaFeet(1.f);
+						contourNoriaFeet = glm::translate(myObjMat, glm::vec3(0, -.08, 0));
+						contourNoriaFeet = glm::scale(contourNoriaFeet, glm::vec3(1.03f));
+						MyLoadedModel::updateModel(contourNoriaFeet, 8);
+						//PIES NORIA
 						MyLoadedModel::updateModel(myNoriaMat, 3);
 
-						//RUEDA NORIA
+						//CONTOUR RUEDA NORIA
 						myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
+						glm::mat4 contourNoriaWheel(1.f);
+						contourNoriaWheel = glm::translate(myObjMat, glm::vec3(0, -.08, 0));
+						contourNoriaWheel = glm::scale(contourNoriaWheel, glm::vec3(1.03f));
+						MyLoadedModel::updateModel(contourNoriaWheel, 9);
+						//RUEDA NORIA
 						MyLoadedModel::updateModel(myNoriaMat, 4);
 					}
 				}
