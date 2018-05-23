@@ -125,6 +125,36 @@ namespace contourTrump {
 	glm::mat4 objMat = glm::mat4(1.f);
 }
 
+namespace contourChicken {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+	glm::vec4 color = { 0, 1, 0, 0 };
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
+
+namespace contourCabina {
+	GLuint* modelVao = new GLuint[shaders::nCabinas];
+	GLuint* modelVbo = new GLuint[shaders::nCabinas * 3];
+
+	glm::mat4* objMat = new glm::mat4[shaders::nCabinas];
+}
+
+namespace contourPata {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
+
+namespace contourNoria {
+	GLuint modelVao;
+	GLuint modelVbo[3];
+	glm::vec4 color = { 196 / 255.f, 144 / 255.f, 204 / 255.f, 0 };
+
+	glm::mat4 objMat = glm::mat4(1.f);
+}
+
 bool show_test_window = false;
 
 float temp1 = 0;
@@ -381,6 +411,7 @@ void GLinit(int width, int height) {
 			vertices.at(i) /= 80;
 	}
 	MyLoadedModel::setupModel(0);
+	MyLoadedModel::setupModel(5);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -394,6 +425,7 @@ void GLinit(int width, int height) {
 		vertices.at(i) /= 60;
 	}
 	MyLoadedModel::setupModel(1);
+	MyLoadedModel::setupModel(6);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -407,6 +439,7 @@ void GLinit(int width, int height) {
 		vertices.at(i) /= 180;
 	}
 	MyLoadedModel::setupModel(2);
+	MyLoadedModel::setupModel(7);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -420,6 +453,7 @@ void GLinit(int width, int height) {
 		vertices.at(i) /= 92.5f;
 	}
 	MyLoadedModel::setupModel(3);
+	MyLoadedModel::setupModel(8);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -433,6 +467,7 @@ void GLinit(int width, int height) {
 		vertices.at(i) /= 92.5f;
 	}
 	MyLoadedModel::setupModel(4);
+	MyLoadedModel::setupModel(9);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -441,11 +476,6 @@ void GLinit(int width, int height) {
 	uvs.clear();
 	uvs.shrink_to_fit();
 
-	res = loadOBJ("trump.obj", vertices, uvs, normals);
-	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 78;
-	}
-	MyLoadedModel::setupModel(5);
 
 	Sphere::setupSphere(moonPos, 1.0f);
 	Cube::setupCube();
@@ -733,12 +763,13 @@ void GLrender(double currentTime) {
 		else if (GV::contourShading == 1)
 			contourTrump::color = { 1,1,0,0 };
 		else {
-			contourTrump::color = { 0,0,1,0 };
-
+			contourTrump::color = { 0,1,1,0 };
+			contourNoria::color = { 0,1,1,0 };
 			MyLoadedModel::drawModel(8);
 			MyLoadedModel::drawModel(9);
 			for (int i = 0; i < shaders::nCabinas; ++i)
 				MyLoadedModel::drawModel(7, i);
+			contourChicken::color = { 0,1,1,0 };
 			MyLoadedModel::drawModel(6);
 		}
 		MyLoadedModel::drawModel(5);
@@ -1711,8 +1742,77 @@ namespace MyLoadedModel {
 			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 			glEnableVertexAttribArray(1);
 			break;
+		case 6:
+			glGenVertexArrays(1, &contourChicken::modelVao);
+			glBindVertexArray(contourChicken::modelVao);
+			glGenBuffers(3, contourChicken::modelVbo);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourChicken::modelVbo[0]);
+
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourChicken::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
+		case 7:
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glGenVertexArrays(1, &contourCabina::modelVao[i]);
+				glBindVertexArray(contourCabina::modelVao[i]);
+				glGenBuffers(3, &contourCabina::modelVbo[i * 3]);
+
+				glBindBuffer(GL_ARRAY_BUFFER, contourCabina::modelVbo[i * 3]);
+
+				glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+				glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+				glEnableVertexAttribArray(0);
+
+				glBindBuffer(GL_ARRAY_BUFFER, contourCabina::modelVbo[i * 3 + 1]);
+
+				glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+				glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+				glEnableVertexAttribArray(1);
+			}
+			break;
+		case 8:
+			glGenVertexArrays(1, &contourPata::modelVao);
+			glBindVertexArray(contourPata::modelVao);
+			glGenBuffers(3, contourPata::modelVbo);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourPata::modelVbo[0]);
+
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourPata::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
+		case 9:
+			glGenVertexArrays(1, &contourNoria::modelVao);
+			glBindVertexArray(contourNoria::modelVao);
+			glGenBuffers(3, contourNoria::modelVbo);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourNoria::modelVbo[0]);
+
+			glBufferData(GL_ARRAY_BUFFER, vertices.size() * sizeof(glm::vec3), &vertices[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(0);
+
+			glBindBuffer(GL_ARRAY_BUFFER, contourNoria::modelVbo[1]);
+
+			glBufferData(GL_ARRAY_BUFFER, normals.size() * sizeof(glm::vec3), &normals[0], GL_STATIC_DRAW);
+			glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+			glEnableVertexAttribArray(1);
+			break;
 		}
-	
 
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1756,6 +1856,24 @@ namespace MyLoadedModel {
 			glDeleteBuffers(2, contourTrump::modelVbo);
 			glDeleteVertexArrays(1, &contourTrump::modelVao);
 			break;
+		case 6:
+			glDeleteBuffers(2, contourChicken::modelVbo);
+			glDeleteVertexArrays(1, &contourChicken::modelVao);
+			break;
+		case 7:
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glDeleteBuffers(2, &contourCabina::modelVbo[i * 3]);
+				glDeleteVertexArrays(1, &contourCabina::modelVao[i]);
+			}
+			break;
+		case 8:
+			glDeleteBuffers(2, contourPata::modelVbo);
+			glDeleteVertexArrays(1, &contourPata::modelVao);
+			break;
+		case 9:
+			glDeleteBuffers(2, contourNoria::modelVbo);
+			glDeleteVertexArrays(1, &contourNoria::modelVao);
+			break;
 		}
 
 		glDeleteProgram(modelProgram);
@@ -1781,6 +1899,18 @@ namespace MyLoadedModel {
 			break;
 		case 5:
 			contourTrump::objMat = transform;
+			break;
+		case 6:
+			contourChicken::objMat = transform;
+			break;
+		case 7:
+			contourCabina::objMat[cabina] = transform;
+			break;
+		case 8:
+			contourPata::objMat = transform;
+			break;
+		case 9:
+			contourNoria::objMat = transform;
 			break;
 		}
 	}
@@ -1821,6 +1951,31 @@ namespace MyLoadedModel {
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourTrump::objMat));
 			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourTrump::color.x, contourTrump::color.y, contourTrump::color.z, contourTrump::color.a);
+			break;
+		case 6:
+			glBindVertexArray(contourChicken::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourChicken::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourChicken::color.x, contourChicken::color.y, contourChicken::color.z, contourChicken::color.a);
+			break;
+		case 7:
+			glBindVertexArray(contourCabina::modelVao[cabina]);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourCabina::objMat[cabina]));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourNoria::color.x, contourNoria::color.y, contourNoria::color.z, contourNoria::color.a);
+			break;
+		case 8:
+			glBindVertexArray(contourPata::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourPata::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourNoria::color.x, contourNoria::color.y, contourNoria::color.z, contourNoria::color.a);
+			break;
+		case 9:
+			glBindVertexArray(contourNoria::modelVao);
+			glUseProgram(modelProgram);
+			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourNoria::objMat));
+			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourNoria::color.x, contourNoria::color.y, contourNoria::color.z, contourNoria::color.a);
+			break;
 		}
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mv_Mat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_modelView));
 		glUniformMatrix4fv(glGetUniformLocation(modelProgram, "mvpMat"), 1, GL_FALSE, glm::value_ptr(RenderVars::_MVP));
@@ -2528,6 +2683,8 @@ void main() {\n\
 				if (GV::models) {
 					//CABINAS
 					MyLoadedModel::updateModel(myObjMat, 2, i);
+					glm::mat4 contourNoria = glm::scale(myObjMat, glm::vec3(1.025f));
+					MyLoadedModel::updateModel(contourNoria, 7, i);
 
 					if (i == 0) {
 						glm::vec4 tmpC = glm::vec4(0.f, 0.f, 0.1f, 1.f);
@@ -2535,8 +2692,14 @@ void main() {\n\
 						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
 						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
 						glm::mat4 contourTrump(1.f);
-						contourTrump = glm::translate(myObjMat, glm::vec3(0, -.1, 0));
-						contourTrump = glm::scale(contourTrump, glm::vec3(1.05f));
+						if (GV::contourShading != 2) {
+							contourTrump = glm::translate(myObjMat, glm::vec3(0, -.1, 0));
+							contourTrump = glm::scale(contourTrump, glm::vec3(1.05f));
+						}
+						else {
+							contourTrump = glm::translate(myObjMat, glm::vec3(0, -.2, 0));
+							contourTrump = glm::scale(contourTrump, glm::vec3(1.1f));
+						}
 						MyLoadedModel::updateModel(contourTrump, 5);
 
 						//TRUMP
@@ -2548,14 +2711,28 @@ void main() {\n\
 						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(0, 0, 2));
 						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(180.f), glm::vec3(0, 1, 0));
 						MyLoadedModel::updateModel(myObjMat, 1);
+						glm::mat4 contourGallina;
+						if (GV::contourShading != 2) {
+							contourGallina = glm::translate(myObjMat, glm::vec3(0, -.1, 0));
+							contourGallina = glm::scale(myObjMat, glm::vec3(1.05f));
+						}
+						else {
+							contourGallina = glm::translate(myObjMat, glm::vec3(0, -.5, 0));
+							contourGallina = glm::scale(myObjMat, glm::vec3(1.1f));
+						}
+						MyLoadedModel::updateModel(contourGallina, 6); //escalar
 
 						//PIES NORIA
 						glm::mat4 myNoriaMat = glm::translate(glm::mat4(1), glm::vec3(0, 0, 0));
 						MyLoadedModel::updateModel(myNoriaMat, 3);
+						glm::mat4 contourPies = glm::scale(myNoriaMat, glm::vec3(1.005f));
+						MyLoadedModel::updateModel(contourPies, 8);
 
 						//RUEDA NORIA
 						myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
 						MyLoadedModel::updateModel(myNoriaMat, 4);
+						glm::mat4 contourNoria = glm::scale(myNoriaMat, glm::vec3(1.005f));
+						MyLoadedModel::updateModel(contourNoria, 9);
 					}
 				}
 
