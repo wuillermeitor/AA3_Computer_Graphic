@@ -17,7 +17,7 @@
 //variables to load an object:
 
 #define PI  3.141592658
-#define nExercises 17
+#define nExercises 7
 const glm::vec4 DARKBLUE = glm::vec4(100 / 255.f, 120 / 255.f, 200 / 255.f, 0);
 
 namespace sun {
@@ -54,7 +54,7 @@ namespace globalVariables {
 	bool models = true;
 	bool pressed = false;
 	int bulbState = 0;
-	int toonShading = 3;
+	int toonShading = 0;
 	int contourShading = 0;
 	glm::vec4 modelColor;
 	float lastTime=0;
@@ -128,8 +128,7 @@ namespace contourTrump {
 namespace contourChicken {
 	GLuint modelVao;
 	GLuint modelVbo[3];
-	glm::vec4 color = { 0, 0, 0, 0 };
-
+	glm::vec4 color = { 0, 1, 0, 0 };
 
 	glm::mat4 objMat = glm::mat4(1.f);
 }
@@ -144,8 +143,6 @@ namespace contourCabina {
 namespace contourPata {
 	GLuint modelVao;
 	GLuint modelVbo[3];
-	glm::vec4 color = { 0, 0, 0, 0 };
-
 
 	glm::mat4 objMat = glm::mat4(1.f);
 }
@@ -153,8 +150,7 @@ namespace contourPata {
 namespace contourNoria {
 	GLuint modelVao;
 	GLuint modelVbo[3];
-	glm::vec4 color = { 0, 0, 0, 0 };
-
+	glm::vec4 color = { 196 / 255.f, 144 / 255.f, 204 / 255.f, 0 };
 
 	glm::mat4 objMat = glm::mat4(1.f);
 }
@@ -167,8 +163,6 @@ float temp3 = 0;
 
 bool light_moves = true;
 
-float aux[3]{ 0 };
-
 void GUI() {
 	bool show = true;
 	ImGui::Begin("Simulation Parameters", &show, 0);
@@ -179,14 +173,16 @@ void GUI() {
 
 		ImGui::Text("Current Exercise: %d", GV::exCounter);
 
-		ImGui::InputFloat3("temp", aux);
-
 		switch (GV::exCounter) {
 		case 1: //solo pinta noria de cubos
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tA set of cubes whose movement resembles the one of a wheel (noria).");
 			break;
 		case 2: //noria de modelos
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tSame behaviour that the one in the first exercise. \n\tThis time using and rendering 3d meshes to compose an actual wheel.");
 			break;
-		case 3: //noria de modelos + movimientos de cámara
+		case 3: //noria de modelos + movimientos de cï¿½mara
 			switch (GV::cameraCounter) {
 			case 0:
 				ImGui::Text("Current Camera: General Shot");
@@ -201,6 +197,8 @@ void GUI() {
 				ImGui::Text("Current Camera: Rotating God's Eye Shot");
 				break;
 			}
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tIn this exercise you can change the camera position by pressing the C key. \n\tEverything else remains the same as in the last exercise.");
 			break;
 		case 4: //noria de modelos + fuentes de luz
 			if (light_moves)
@@ -215,6 +213,15 @@ void GUI() {
 				else if (GV::bulbState == 2)
 					ImGui::Text("B key to Bulb Light: On (Pendulum)");
 			}
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tThis time the wheel is lightened by different light sources. \n\tWe have the Sun and the Moon, whose movement may be stopped by pressing the D key.\n\
+	In this mode the Sun will disappear and the Moon and the dark blue ambient light will be the only ones \n\tlightening the scene.\n\
+	Whenever the night-day cycle is turned off, you can press B to change between the different bulb light illumination modes. \n\ \n\
+	The bulb light consists in a diffuse green light located between trump and the chicken. \n\
+	Its modes are:\n\
+		1.-Static (stays between Trump and Chicken and emits light)\n\
+		2.-Off (doesn't emit light)\n\
+		3.-Pendulum (the bulb oscilates like a pendulum in the plane between Trump and the Chicken, while emmiting light) ");
 			break;
 		case 5: //global scene composition
 			switch (GV::cameraCounter) {
@@ -231,6 +238,11 @@ void GUI() {
 				ImGui::Text("Current Camera: Rotating God's Eye Shot");
 				break;
 			}
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tIn This scene there are two wheel and you can change between camera modes, \n\
+	the same way you could in exercise 3.\n\
+	Whenever the cabin where Trump and the Chicken reaches its wheel's lowest point,\n\
+	both charachters teleport to the other wheel's topmost cabin.");
 			break;
 		case 6: //toon shading exercises
 			if (light_moves)
@@ -246,28 +258,37 @@ void GUI() {
 					ImGui::Text("B key to Bulb Light: On (Pendulum)");
 			}
 			if (GV::toonShading == 0) {
-				ImGui::Text("T key to Toon Shading: Exercise 9 (Only Sun)");
+				ImGui::Text("T key to Toon Shading: Exercise 9 (1 - Only Sun)");
 			}
 			else if (GV::toonShading == 1) {
-				ImGui::Text("T key to Toon Shading: Exercise 10 (Sun and Moon)");
+				ImGui::Text("T key to Toon Shading: Exercise 10 (2 - Sun and Moon)");
 			}
 			else if (GV::toonShading == 2) {
-				ImGui::Text("T key to Toon Shading: Exercise 11 (Night Illumination and Bulb Light)");
+				ImGui::Text("T key to Toon Shading: Exercise 11 (3 - Night Illumination and Bulb Light)");
 			}
 			else if (GV::toonShading == 3) {
-				ImGui::Text("T key to Toon Shading: Exercise 9 , 10 and 11 (Toon Shading Off)");
+				ImGui::Text("T key to Toon Shading: Exercise 9 , 10 and 11 (4 - Toon Shading Off)");
 			}
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tKeeping the day-night and bulb options you had in exercise 4,\n\
+	in this exercise you can also press T to change between the different shading modes:\n\
+\n\		1.-Toon Shading with only sunlight\n\
+		2.-Toon Shading with both Sun and Moon light\n\
+		3.-Toon Shading with night and bulb illumination\n\
+		4.-Toon Shading Off");
 			break;
 		case 7: //contour shading
 			if (GV::contourShading == 0) {
-				ImGui::Text("T key to Contour Shading: Exercise 12 (Trump Contour)");
+				ImGui::Text("T key to Contour Shading: Exercise 12 (1 - Trump Contour)");
 			}
 			else if (GV::contourShading == 1) {
-				ImGui::Text("T key to Contour Shading: Exercise 13 (Highlight Contour and Toon Shader)");
+				ImGui::Text("T key to Contour Shading: Exercise 13 (2 - Trump Highlight Contour)");
 			}
 			else if (GV::contourShading == 2) {
-				ImGui::Text("T key to Contour Shading: Exercise 14 (3D characters thicker contour)");
+				ImGui::Text("T key to Contour Shading: Exercise 14 (3 - Thick characters Contour)");
 			}
+			else
+				std::cout << "algo va mal" << std::endl;
 			switch (GV::cameraCounter) {
 			case 0:
 				ImGui::Text("Current Camera: General Shot");
@@ -282,6 +303,13 @@ void GUI() {
 				ImGui::Text("Current Camera: Rotating God's Eye Shot");
 				break;
 			}
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tKeeping the camera modes you had on exercise 3, in this exercise you can\n\
+	change between different outlining modes. The modes are:\n\
+		1.-Trump Black Outline\n\
+		2.-Trump Yellow Outline\n\
+		3.-Characters thick otline and wheel thin outline.\n\ ");
+			break;
 		}
 	}
 	// .........................
@@ -413,6 +441,7 @@ void GLinit(int width, int height) {
 			vertices.at(i) /= 80;
 	}
 	MyLoadedModel::setupModel(0);
+	MyLoadedModel::setupModel(5);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -426,6 +455,7 @@ void GLinit(int width, int height) {
 		vertices.at(i) /= 60;
 	}
 	MyLoadedModel::setupModel(1);
+	MyLoadedModel::setupModel(6);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -439,6 +469,7 @@ void GLinit(int width, int height) {
 		vertices.at(i) /= 180;
 	}
 	MyLoadedModel::setupModel(2);
+	MyLoadedModel::setupModel(7);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -452,6 +483,7 @@ void GLinit(int width, int height) {
 		vertices.at(i) /= 92.5f;
 	}
 	MyLoadedModel::setupModel(3);
+	MyLoadedModel::setupModel(8);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -465,6 +497,7 @@ void GLinit(int width, int height) {
 		vertices.at(i) /= 92.5f;
 	}
 	MyLoadedModel::setupModel(4);
+	MyLoadedModel::setupModel(9);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -473,11 +506,6 @@ void GLinit(int width, int height) {
 	uvs.clear();
 	uvs.shrink_to_fit();
 
-	res = loadOBJ("trump.obj", vertices, uvs, normals);
-	for (int i = 0; i < vertices.size(); ++i) {
-		vertices.at(i) /= 78;
-	}
-	MyLoadedModel::setupModel(5);
 
 	vertices.clear();
 	vertices.shrink_to_fit();
@@ -547,8 +575,10 @@ void GLinit(int width, int height) {
 void GLcleanup() {
 	/*Box::cleanupCube();
 	Axis::cleanupAxis();*/
-	MyLoadedModel::cleanupModel(0);
-	MyLoadedModel::cleanupModel(1);
+	for (int i = 0; i < 10; ++i)
+	{
+		MyLoadedModel::cleanupModel(i);
+	}
 	Sphere::cleanupSphere();
 	Cube::cleanupCube();
 
@@ -576,7 +606,7 @@ void GLrender(double currentTime) {
 		for (int i = 0; i < shaders::nCabinas; ++i)
 			MyLoadedModel::drawModel(2, i);
 		break;
-	case 3: //noria de modelos + movimientos de cámara
+	case 3: //noria de modelos + movimientos de cï¿½mara
 
 		sun::color = sun::ambient = moon::color = bulb::color = { 1, 1, 1, 0 };
 
@@ -592,7 +622,7 @@ void GLrender(double currentTime) {
 		if (light_moves) {
 			timeGiratorio += GV::dt;
 		}
-		//ACTUALIZAR POSICIÓN Y COLOR DE LOS ASTROS
+		//ACTUALIZAR POSICIï¿½N Y COLOR DE LOS ASTROS
 		float circleRad = 40;
 		float ySinSol = sin(glm::radians((float)(timeGiratorio / sun::period) * 360));
 		float zCosSol = cos(glm::radians((float)(timeGiratorio / sun::period) * 360));
@@ -600,7 +630,7 @@ void GLrender(double currentTime) {
 		float zCosLuna = cos(glm::radians((float)(timeGiratorio / moon::period) * 360));
 
 		if (light_moves) {
-			//POSICIONES EN FUNCIÓN DEL SENO Y COSENO DE SOL Y LUNA
+			//POSICIONES EN FUNCIï¿½N DEL SENO Y COSENO DE SOL Y LUNA
 			moon::pos = glm::rotate(glm::mat4(1), glm::radians(135.f), glm::vec3(0, 1, 0)) * glm::vec4(0, ySinLuna*circleRad, zCosLuna*circleRad, 1);
 			sun::pos = glm::vec3(0, ySinSol*circleRad, zCosSol*circleRad);
 
@@ -609,7 +639,7 @@ void GLrender(double currentTime) {
 			zCosSol += 1;
 			ySinLuna += 1;
 
-			//COLORES EN FUNCIÓN DE LA POSICIÓN
+			//COLORES EN FUNCIï¿½N DE LA POSICIï¿½N
 			//luna
 			moon::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(172.f / 255.f, 220.f / 255.f, 221.f / 255.f), ySinLuna), 0);
 
@@ -627,7 +657,7 @@ void GLrender(double currentTime) {
 			bulb::color = { 0, 0, 0, 0 };
 		}
 		else {
-			//ACTUALIZACIÓN DE POSICIONES
+			//ACTUALIZACIï¿½N DE POSICIONES
 
 			//sol nada
 			//luna nada
@@ -704,7 +734,7 @@ void GLrender(double currentTime) {
 		if (light_moves) {
 			timeGiratorio += GV::dt;
 		}
-		//ACTUALIZAR POSICIÓN Y COLOR DE LOS ASTROS
+		//ACTUALIZAR POSICIï¿½N Y COLOR DE LOS ASTROS
 		float circleRad = 40;
 		float ySinSol = sin(glm::radians((float)(timeGiratorio / sun::period) * 360));
 		float zCosSol = cos(glm::radians((float)(timeGiratorio / sun::period) * 360));
@@ -712,7 +742,7 @@ void GLrender(double currentTime) {
 		float zCosLuna = cos(glm::radians((float)(timeGiratorio / moon::period) * 360));
 
 		if (light_moves) {
-			//POSICIONES EN FUNCIÓN DEL SENO Y COSENO DE SOL Y LUNA
+			//POSICIONES EN FUNCIï¿½N DEL SENO Y COSENO DE SOL Y LUNA
 			moon::pos = glm::rotate(glm::mat4(1), glm::radians(135.f), glm::vec3(0, 1, 0)) * glm::vec4(0, ySinLuna*circleRad, zCosLuna*circleRad, 1);
 			sun::pos = glm::vec3(0, ySinSol*circleRad, zCosSol*circleRad);
 
@@ -721,7 +751,7 @@ void GLrender(double currentTime) {
 			zCosSol += 1;
 			ySinLuna += 1;
 
-			//COLORES EN FUNCIÓN DE LA POSICIÓN
+			//COLORES EN FUNCIï¿½N DE LA POSICIï¿½N
 			//luna
 			moon::color = glm::vec4(glm::lerp(glm::vec3(0, 0, 0), glm::vec3(172.f / 255.f, 220.f / 255.f, 221.f / 255.f), ySinLuna), 0);
 
@@ -744,7 +774,7 @@ void GLrender(double currentTime) {
 			}
 		}
 		else {
-			//ACTUALIZACIÓN DE POSICIONES
+			//ACTUALIZACIï¿½N DE POSICIONES
 
 			//sol nada
 			//luna nada
@@ -767,17 +797,21 @@ void GLrender(double currentTime) {
 		}
 
 		//DRAW
-		if (light_moves) { //sol
+		if (GV::toonShading == 0 || GV::toonShading == 1 || GV::toonShading == 3) {
 			Sphere::updateSphere(sun::pos, 1.f);
 			Sphere::drawSphere();
 		}
-		else if (GV::bulbState == 0 || GV::bulbState == 2) { //bulb
+		
+		if (GV::toonShading == 2) {
 			Sphere::updateSphere(bulb::pos, .25f);
 			Sphere::drawSphere();
 		}
+		
 		//luna
-		Sphere::updateSphere(moon::pos, 1.f);
-		Sphere::drawSphere();
+		if (GV::toonShading == 1 || GV::toonShading == 2 || GV::toonShading == 3) {
+			Sphere::updateSphere(moon::pos, 1.f);
+			Sphere::drawSphere();
+		}
 
 
 		//modelos
@@ -803,28 +837,45 @@ void GLrender(double currentTime) {
 				MyLoadedModel::drawModel(2, i);
 			MyLoadedModel::drawModel(1);
 
-			glStencilFunc(GL_ALWAYS, 1, 0xFF);
-			glStencilMask(0xFF);
-			MyLoadedModel::drawModel(0);
-
-			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
-			glStencilMask(0x00);
-			glDisable(GL_DEPTH_TEST);
-			contourTrump::color = { 0, 0, 0, 0 };
-			MyLoadedModel::drawModel(5);
-			glStencilMask(0xFF);
-		}
-		else if (GV::contourShading == 1) {//TRUMP CON HIGHLIGHT
-			glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
+		glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
+		if (GV::contourShading != 2) {
 			MyLoadedModel::drawModel(3);
 			MyLoadedModel::drawModel(4);
 			for (int i = 0; i < shaders::nCabinas; ++i)
 				MyLoadedModel::drawModel(2, i);
 			MyLoadedModel::drawModel(1);
+		}
 
-			glStencilFunc(GL_ALWAYS, 1, 0xFF);
-			glStencilMask(0xFF);
-			MyLoadedModel::drawModel(0);
+		glStencilFunc(GL_ALWAYS, 1, 0xFF);
+		glStencilMask(0xFF);
+		MyLoadedModel::drawModel(0);
+		if (GV::contourShading == 2) {
+			MyLoadedModel::drawModel(3);
+			MyLoadedModel::drawModel(4);
+			for (int i = 0; i < shaders::nCabinas; ++i)
+				MyLoadedModel::drawModel(2, i);
+			MyLoadedModel::drawModel(1);
+		}
+
+		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+		glStencilMask(0x00);
+		glDisable(GL_DEPTH_TEST);
+		if (GV::contourShading == 0)
+			contourTrump::color = { 0,0,0,0 };
+		else if (GV::contourShading == 1)
+			contourTrump::color = { 1,1,0,0 };
+		else {
+			contourTrump::color = { 0,1,1,0 };
+			contourNoria::color = { 0,1,1,0 };
+			MyLoadedModel::drawModel(8);
+			MyLoadedModel::drawModel(9);
+			for (int i = 0; i < shaders::nCabinas; ++i)
+				MyLoadedModel::drawModel(7, i);
+			contourChicken::color = { 0,1,1,0 };
+			MyLoadedModel::drawModel(6);
+		}
+		MyLoadedModel::drawModel(5);
+		glStencilMask(0xFF);
 
 			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 			glStencilMask(0x00);
@@ -1572,8 +1623,8 @@ namespace MyLoadedModel {
 		"#version 330\n\
 		uniform int toonShading; \n\
 		uniform int contourShading; \n\
-		uniform int currentEx; \n\
-		uniform int currentModel; \n\
+		uniform int exCounter; \n\
+		uniform int model; \n\
 		in vec4 vert_Normal;\n\
 		in vec3 lDir;\n\
 		in vec3 lDir2;\n\
@@ -1587,10 +1638,7 @@ namespace MyLoadedModel {
 		uniform vec4 color3;\n\
 		uniform vec4 ambient;\n\
 		void main() {\n\
-			if(currentModel>=5){\n\
-				out_Color = vec4(modelcolor.xyz, 1.0); \n\
-			}\n\
-			if(currentEx==6){\n\
+			if(exCounter==6){\n\
 				if (toonShading == 3){ \n\
 					float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
 					float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
@@ -1631,7 +1679,42 @@ namespace MyLoadedModel {
 					else if(U3>=0.5) U3=1;\n\
 					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
 				}\n\
-				/*else{\n\
+				else{\n\
+				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+				if(U<0.2) U=0.2;\n\
+				else if(U>=0.2 && U<0.4) U=0.4;\n\
+				else if(U>=0.4 && U<0.5) U=0.6;\n\
+				else if(U>=0.5) U=1;\n\
+				\n\
+				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+				if(U2<0.2) U2=0.2;\n\
+				else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
+				else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
+				else if(U2>=0.5) U2=1;\n\
+				\n\
+				float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+				if(U3<0.2) U3=0.2;\n\
+				else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
+				else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
+				else if(U3>=0.5) U3=1;\n\
+				\n\
+				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+				\n\
+				}\n\
+			}\n\
+			else if (exCounter==7){\n\
+				switch(contourShading){\n\
+				case 2:\n\
+				case 0:{\n\
+					float U = dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0)); \n\
+					float U2 = dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0)); \n\
+					float U3 = dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0)); \n\
+					if(model<5)\n\
+						out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient); \n\
+					else\n\
+						out_Color = vec4(modelcolor.xyz, 1.0); \n\
+					break;}\n\
+				case 1:{\n\
 					float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
 					if(U<0.2) U=0.2;\n\
 					else if(U>=0.2 && U<0.4) U=0.4;\n\
@@ -1650,21 +1733,18 @@ namespace MyLoadedModel {
 					else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
 					else if(U3>=0.5) U3=1;\n\
 					\n\
-					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
-					\n\
-				}*/\n\
-			}\n\
-			else if(currentEx==7){\n\
-				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
-				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
-				float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
-				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+					if(model<5)\n\
+						out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+					else\n\
+						out_Color = vec4(modelcolor.xyz, 1.0); \n\
+					break;}\n\
+				}\n\
 			}\n\
 			else{\n\
-				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
-				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
-				float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
-				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+				float U = dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0)); \n\
+				float U2 = dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0)); \n\
+				float U3 = dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0)); \n\
+				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient); \n\
 			}\n\
 		}";
 	void setupModel(int model) {
@@ -1844,7 +1924,6 @@ namespace MyLoadedModel {
 			glEnableVertexAttribArray(1);
 			break;
 		}
-	
 
 		glBindVertexArray(0);
 		glBindBuffer(GL_ARRAY_BUFFER, 0);
@@ -1887,6 +1966,24 @@ namespace MyLoadedModel {
 		case 5:
 			glDeleteBuffers(2, contourTrump::modelVbo);
 			glDeleteVertexArrays(1, &contourTrump::modelVao);
+			break;
+		case 6:
+			glDeleteBuffers(2, contourChicken::modelVbo);
+			glDeleteVertexArrays(1, &contourChicken::modelVao);
+			break;
+		case 7:
+			for (int i = 0; i < shaders::nCabinas; ++i) {
+				glDeleteBuffers(2, &contourCabina::modelVbo[i * 3]);
+				glDeleteVertexArrays(1, &contourCabina::modelVao[i]);
+			}
+			break;
+		case 8:
+			glDeleteBuffers(2, contourPata::modelVbo);
+			glDeleteVertexArrays(1, &contourPata::modelVao);
+			break;
+		case 9:
+			glDeleteBuffers(2, contourNoria::modelVbo);
+			glDeleteVertexArrays(1, &contourNoria::modelVao);
 			break;
 		}
 
@@ -1965,6 +2062,7 @@ namespace MyLoadedModel {
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourTrump::objMat));
 			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourTrump::color.x, contourTrump::color.y, contourTrump::color.z, contourTrump::color.a);
+			break;
 		case 6:
 			glBindVertexArray(contourChicken::modelVao);
 			glUseProgram(modelProgram);
@@ -1972,13 +2070,13 @@ namespace MyLoadedModel {
 			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourChicken::color.x, contourChicken::color.y, contourChicken::color.z, contourChicken::color.a);
 			break;
 		case 7:
-			glBindVertexArray(cabina::modelVao[cabina]);
+			glBindVertexArray(contourCabina::modelVao[cabina]);
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourCabina::objMat[cabina]));
 			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourNoria::color.x, contourNoria::color.y, contourNoria::color.z, contourNoria::color.a);
 			break;
 		case 8:
-			glBindVertexArray(pata::modelVao);
+			glBindVertexArray(contourPata::modelVao);
 			glUseProgram(modelProgram);
 			glUniformMatrix4fv(glGetUniformLocation(modelProgram, "objMat"), 1, GL_FALSE, glm::value_ptr(contourPata::objMat));
 			glUniform4f(glGetUniformLocation(modelProgram, "modelcolor"), contourNoria::color.x, contourNoria::color.y, contourNoria::color.z, contourNoria::color.a);
@@ -2001,8 +2099,8 @@ namespace MyLoadedModel {
 		glUniform4f(glGetUniformLocation(modelProgram, "ambient"), sun::ambient.x, sun::ambient.y, sun::ambient.z, sun::ambient.a);
 		glUniform1i(glGetUniformLocation(modelProgram, "toonShading"), GV::toonShading);
 		glUniform1i(glGetUniformLocation(modelProgram, "contourShading"), GV::contourShading);
-		glUniform1i(glGetUniformLocation(modelProgram, "currentEx"), GV::exCounter);
-		glUniform1i(glGetUniformLocation(modelProgram, "currentModel"), model);
+		glUniform1i(glGetUniformLocation(modelProgram, "exCounter"), GV::exCounter);
+		glUniform1i(glGetUniformLocation(modelProgram, "model"), model);
 	
 		glDrawArrays(GL_TRIANGLES, 0, 25000);
 
@@ -2322,7 +2420,7 @@ void main() {\n\
 					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
 				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
 
-				//CÁMARA
+				//Cï¿½MARA
 				switch (GV::cameraCounter) {
 				case 0://GENERAL SHOT
 					RV::_modelView = glm::mat4(1.f);
@@ -2413,7 +2511,7 @@ void main() {\n\
 		case 4: { //LIGHT SOURCES
 			counter += GV::dt;
 
-			//CÁMARA
+			//Cï¿½MARA
 			RV::_modelView = glm::mat4(1);
 			RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, -10, -80));
 			RV::_modelView = glm::rotate(RV::_modelView, glm::radians(30.f), glm::vec3(1.f, 0.f, 0.f));
@@ -2484,7 +2582,7 @@ void main() {\n\
 				if (i == 0 && (posiciones.y < -29.9f))
 					GV::trumpNoria1 = false;
 				
-				//CÁMARA
+				//Cï¿½MARA
 				switch (GV::cameraCounter) {
 				case 0://GENERAL SHOT
 					RV::_modelView = glm::mat4(1.f);
@@ -2581,7 +2679,7 @@ void main() {\n\
 
 				//FIX
 
-				//CÁMARA
+				//Cï¿½MARA
 				RV::_modelView = glm::mat4(1);
 				RV::_modelView = glm::translate(RV::_modelView, glm::vec3(0, -10, -80));
 				RV::_modelView = glm::rotate(RV::_modelView, glm::radians(30.f), glm::vec3(1.f, 0.f, 0.f));
@@ -2646,7 +2744,7 @@ void main() {\n\
 					shaders::rCabinas * sin((float)2 * PI * 0.1* currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
 				glm::mat4 myObjMat = glm::translate(glm::mat4(1.0f), glm::vec3(posiciones.x, posiciones.y, posiciones.z));
 
-				//CÁMARA
+				//Cï¿½MARA
 				switch (GV::cameraCounter) {
 				case 0://GENERAL SHOT
 					RV::_modelView = glm::mat4(1.f);
@@ -2701,14 +2799,22 @@ void main() {\n\
 					MyLoadedModel::updateModel(contourNoriaCabin, 7, i);
 					//CABINAS
 					MyLoadedModel::updateModel(myObjMat, 2, i);
+					glm::mat4 contourNoria = glm::scale(myObjMat, glm::vec3(1.025f));
+					MyLoadedModel::updateModel(contourNoria, 7, i);
 
 					if (i == 0) {
 						//CONTOUR TRUMP
 						myObjMat *= glm::translate(glm::mat4(1.0f), glm::vec3(-1, -3, 0));
 						myObjMat *= glm::rotate(glm::mat4(1.f), glm::radians(90.f), glm::vec3(0, 1, 0));
 						glm::mat4 contourTrump(1.f);
-						contourTrump = glm::translate(myObjMat, glm::vec3(0, -.08, 0));
-						contourTrump = glm::scale(contourTrump, glm::vec3(1.03f));
+						if (GV::contourShading != 2) {
+							contourTrump = glm::translate(myObjMat, glm::vec3(0, -.1, 0));
+							contourTrump = glm::scale(contourTrump, glm::vec3(1.05f));
+						}
+						else {
+							contourTrump = glm::translate(myObjMat, glm::vec3(0, -.2, 0));
+							contourTrump = glm::scale(contourTrump, glm::vec3(1.1f));
+						}
 						MyLoadedModel::updateModel(contourTrump, 5);
 						//TRUMP
 						MyLoadedModel::updateModel(myObjMat, 0);
@@ -2722,6 +2828,16 @@ void main() {\n\
 						MyLoadedModel::updateModel(contourGallina, 6);
 						//GALLINA
 						MyLoadedModel::updateModel(myObjMat, 1);
+						glm::mat4 contourGallina;
+						if (GV::contourShading != 2) {
+							contourGallina = glm::translate(myObjMat, glm::vec3(0, -.1, 0));
+							contourGallina = glm::scale(myObjMat, glm::vec3(1.05f));
+						}
+						else {
+							contourGallina = glm::translate(myObjMat, glm::vec3(0, -.5, 0));
+							contourGallina = glm::scale(myObjMat, glm::vec3(1.1f));
+						}
+						MyLoadedModel::updateModel(contourGallina, 6); //escalar
 
 						//CONTOUR PIES NORIA
 						glm::mat4 myNoriaMat = glm::translate(glm::mat4(1), glm::vec3(0, 0, 0));
@@ -2731,6 +2847,8 @@ void main() {\n\
 						MyLoadedModel::updateModel(contourNoriaFeet, 8);
 						//PIES NORIA
 						MyLoadedModel::updateModel(myNoriaMat, 3);
+						glm::mat4 contourPies = glm::scale(myNoriaMat, glm::vec3(1.005f));
+						MyLoadedModel::updateModel(contourPies, 8);
 
 						//CONTOUR RUEDA NORIA
 						myNoriaMat = glm::rotate(glm::mat4(1.f), glm::radians(currentTime * 36), glm::vec3(0, 0, 1));
@@ -2740,6 +2858,8 @@ void main() {\n\
 						MyLoadedModel::updateModel(contourNoriaWheel, 9);
 						//RUEDA NORIA
 						MyLoadedModel::updateModel(myNoriaMat, 4);
+						glm::mat4 contourNoria = glm::scale(myNoriaMat, glm::vec3(1.005f));
+						MyLoadedModel::updateModel(contourNoria, 9);
 					}
 				}
 
@@ -2780,7 +2900,7 @@ void noriaRelocateEx5(float currentTime, float offset) {
 			shaders::rCabinas * sin((float)2 * PI * 0.1* -currentTime + 2 * PI * i / shaders::nCabinas), 0.f };
 		glm::mat4 myObjMat = glm::translate(glm::mat4(1), glm::vec3(posiciones.x+ offset, posiciones.y, posiciones.z));
 
-		//CÁMARA
+		//Cï¿½MARA
 
 		if (!GV::trumpNoria1) {
 			switch (GV::cameraCounter) {
