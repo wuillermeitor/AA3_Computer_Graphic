@@ -706,19 +706,41 @@ void GLrender(double currentTime) {
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
 
 		glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
-		MyLoadedModel::drawModel(3);
-		MyLoadedModel::drawModel(4);
-		for (int i = 0; i < shaders::nCabinas; ++i)
-			MyLoadedModel::drawModel(2, i);
-		MyLoadedModel::drawModel(1);
+		if (GV::contourShading != 2) {
+			MyLoadedModel::drawModel(3);
+			MyLoadedModel::drawModel(4);
+			for (int i = 0; i < shaders::nCabinas; ++i)
+				MyLoadedModel::drawModel(2, i);
+			MyLoadedModel::drawModel(1);
+		}
 
 		glStencilFunc(GL_ALWAYS, 1, 0xFF);
 		glStencilMask(0xFF);
 		MyLoadedModel::drawModel(0);
+		if (GV::contourShading == 2) {
+			MyLoadedModel::drawModel(3);
+			MyLoadedModel::drawModel(4);
+			for (int i = 0; i < shaders::nCabinas; ++i)
+				MyLoadedModel::drawModel(2, i);
+			MyLoadedModel::drawModel(1);
+		}
 
 		glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
 		glStencilMask(0x00);
 		glDisable(GL_DEPTH_TEST);
+		if (GV::contourShading == 0)
+			contourTrump::color = { 0,0,0,0 };
+		else if (GV::contourShading == 1)
+			contourTrump::color = { 1,1,0,0 };
+		else {
+			contourTrump::color = { 0,0,1,0 };
+
+			MyLoadedModel::drawModel(8);
+			MyLoadedModel::drawModel(9);
+			for (int i = 0; i < shaders::nCabinas; ++i)
+				MyLoadedModel::drawModel(7, i);
+			MyLoadedModel::drawModel(6);
+		}
 		MyLoadedModel::drawModel(5);
 		glStencilMask(0xFF);
 
