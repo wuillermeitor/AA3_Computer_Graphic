@@ -55,6 +55,7 @@ namespace globalVariables {
 	bool pressed = false;
 	int bulbState = 0;
 	int toonShading = 3;
+	int contourShading = 0;
 	glm::vec4 modelColor;
 	float lastTime=0;
 	float dt=0;
@@ -224,9 +225,17 @@ void GUI() {
 			}
 			break;
 		case 7: //contour shading
-			if (GV::toonShading == 0) {
+			if (GV::contourShading == 0) {
 				ImGui::Text("T key to Contour Shading: Exercise 12 (Trump Contour)");
 			}
+			else if (GV::contourShading == 1) {
+				ImGui::Text("T key to Contour Shading: Exercise 13 (Trump Highlight Contour)");
+			}
+			else if (GV::contourShading == 2) {
+				ImGui::Text("T key to Contour Shading: Exercise 14 (Thick characters Contour)");
+			}
+			else
+				std::cout << "algo va mal" << std::endl;
 			switch (GV::cameraCounter) {
 			case 0:
 				ImGui::Text("Current Camera: General Shot");
@@ -1450,6 +1459,9 @@ namespace MyLoadedModel {
 	const char* model_fragShader =
 		"#version 330\n\
 		uniform int toonShading; \n\
+		uniform int contourShading; \n\
+		uniform int exCounter; \n\
+		uniform int model; \n\
 		in vec4 vert_Normal;\n\
 		in vec3 lDir;\n\
 		in vec3 lDir2;\n\
@@ -1462,67 +1474,113 @@ namespace MyLoadedModel {
 		uniform vec4 color3;\n\
 		uniform vec4 ambient;\n\
 		void main() {\n\
-			if (toonShading == 3){ \n\
-				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
-				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
-				float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
-				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
-			}\n\
-			else if (toonShading == 0){\n\
+			if(exCounter==6){\n\
+				if (toonShading == 3){ \n\
+					float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+					float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+					float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+				}\n\
+				else if (toonShading == 0){\n\
+					float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+					if(U<0.2) U=0.2;\n\
+					else if(U>=0.2 && U<0.4) U=0.4;\n\
+					else if(U>=0.4 && U<0.5) U=0.6;\n\
+					else if(U>=0.5) U=1;\n\
+					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 )));\n\
+				}\n\
+				else if (toonShading == 1){\n\
+					float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+					if(U<0.2) U=0.2;\n\
+					else if(U>=0.2 && U<0.4) U=0.4;\n\
+					else if(U>=0.4 && U<0.5) U=0.6;\n\
+					else if(U>=0.5) U=1;\n\
+					float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+					if(U2<0.2) U2=0.2;\n\
+					else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
+					else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
+					else if(U2>=0.5) U2=1;\n\
+					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0)));\n\
+				}\n\
+				else if (toonShading == 2){\n\
+					float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+					if(U2<0.2) U2=0.2;\n\
+					else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
+					else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
+					else if(U2>=0.5) U2=1;\n\
+					float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+					if(U3<0.2) U3=0.2;\n\
+					else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
+					else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
+					else if(U3>=0.5) U3=1;\n\
+					out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+				}\n\
+				else{\n\
 				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
 				if(U<0.2) U=0.2;\n\
 				else if(U>=0.2 && U<0.4) U=0.4;\n\
 				else if(U>=0.4 && U<0.5) U=0.6;\n\
 				else if(U>=0.5) U=1;\n\
-				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 )));\n\
-			}\n\
-			else if (toonShading == 1){\n\
-				float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
-				if(U<0.2) U=0.2;\n\
-				else if(U>=0.2 && U<0.4) U=0.4;\n\
-				else if(U>=0.4 && U<0.5) U=0.6;\n\
-				else if(U>=0.5) U=1;\n\
+				\n\
 				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
 				if(U2<0.2) U2=0.2;\n\
 				else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
 				else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
 				else if(U2>=0.5) U2=1;\n\
-				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0)));\n\
-			}\n\
-			else if (toonShading == 2){\n\
-				float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
-				if(U2<0.2) U2=0.2;\n\
-				else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
-				else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
-				else if(U2>=0.5) U2=1;\n\
+				\n\
 				float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
 				if(U3<0.2) U3=0.2;\n\
 				else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
 				else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
 				else if(U3>=0.5) U3=1;\n\
-				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+				\n\
+				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+				\n\
+				}\n\
+			}\n\
+			else if (exCounter==7){\n\
+				switch(contourShading){\n\
+				case 2:\n\
+				case 0:{\n\
+					float U = dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0)); \n\
+					float U2 = dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0)); \n\
+					float U3 = dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0)); \n\
+					if(model<5)\n\
+						out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient); \n\
+					else\n\
+						out_Color = vec4(modelcolor.xyz, 1.0); \n\
+					break;}\n\
+				case 1:{\n\
+					float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
+					if(U<0.2) U=0.2;\n\
+					else if(U>=0.2 && U<0.4) U=0.4;\n\
+					else if(U>=0.4 && U<0.5) U=0.6;\n\
+					else if(U>=0.5) U=1;\n\
+					\n\
+					float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
+					if(U2<0.2) U2=0.2;\n\
+					else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
+					else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
+					else if(U2>=0.5) U2=1;\n\
+					\n\
+					float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
+					if(U3<0.2) U3=0.2;\n\
+					else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
+					else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
+					else if(U3>=0.5) U3=1;\n\
+					\n\
+					if(model<5)\n\
+						out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
+					else\n\
+						out_Color = vec4(modelcolor.xyz, 1.0); \n\
+					break;}\n\
+				}\n\
 			}\n\
 			else{\n\
-			float U=dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0));\n\
-			if(U<0.2) U=0.2;\n\
-			else if(U>=0.2 && U<0.4) U=0.4;\n\
-			else if(U>=0.4 && U<0.5) U=0.6;\n\
-			else if(U>=0.5) U=1;\n\
-			\n\
-			float U2=dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0));\n\
-			if(U2<0.2) U2=0.2;\n\
-			else if(U2>=0.2 && U2<0.4) U2=0.4;\n\
-			else if(U2>=0.4 && U2<0.5) U2=0.6;\n\
-			else if(U2>=0.5) U2=1;\n\
-			\n\
-			float U3=dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0));\n\
-			if(U3<0.2) U3=0.2;\n\
-			else if(U3>=0.2 && U3<0.4) U3=0.4;\n\
-			else if(U3>=0.4 && U3<0.5) U3=0.6;\n\
-			else if(U3>=0.5) U3=1;\n\
-			\n\
-			out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0 ) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient);\n\
-			\n\
+				float U = dot(vert_Normal, mv_Mat*vec4(lDir.x, lDir.y, lDir.z, 0.0)); \n\
+				float U2 = dot(vert_Normal, mv_Mat*vec4(lDir2.x, lDir2.y, lDir2.z, 0.0)); \n\
+				float U3 = dot(vert_Normal, mv_Mat*vec4(lDir3.x, lDir3.y, lDir3.z, 0.0)); \n\
+				out_Color = vec4(modelcolor.xyz, 1.0)*((vec4(color.xyz * U, 1.0) + vec4(color2.xyz * U2, 1.0) + vec4(color3.xyz * U3, 1.0))*ambient); \n\
 			}\n\
 		}";
 	void setupModel(int model) {
@@ -1752,6 +1810,9 @@ namespace MyLoadedModel {
 		glUniform4f(glGetUniformLocation(modelProgram, "color3"), bulb::color.x, bulb::color.y, bulb::color.z, bulb::color.a);
 		glUniform4f(glGetUniformLocation(modelProgram, "ambient"), sun::ambient.x, sun::ambient.y, sun::ambient.z, sun::ambient.a);
 		glUniform1i(glGetUniformLocation(modelProgram, "toonShading"), GV::toonShading);
+		glUniform1i(glGetUniformLocation(modelProgram, "contourShading"), GV::contourShading);
+		glUniform1i(glGetUniformLocation(modelProgram, "exCounter"), GV::exCounter);
+		glUniform1i(glGetUniformLocation(modelProgram, "model"), model);
 	
 		glDrawArrays(GL_TRIANGLES, 0, 25000);
 
@@ -1958,11 +2019,22 @@ void main() {\n\
 			}
 		}
 		else if (keyboardState[SDL_SCANCODE_T]) { //toon shading
-			if (!GV::pressed) {
-				GV::pressed = true;
-				GV::toonShading++;
-				if (GV::toonShading == 4) {
-					GV::toonShading = 0;
+			if (GV::exCounter == 6) {
+				if (!GV::pressed) {
+					GV::pressed = true;
+					GV::toonShading++;
+					if (GV::toonShading == 4) {
+						GV::toonShading = 0;
+					}
+				}
+			}
+			else if (GV::exCounter == 7) {
+				if (!GV::pressed) {
+					GV::pressed = true;
+					GV::contourShading++;
+					if (GV::contourShading == 3) {
+						GV::contourShading = 0;
+					}
 				}
 			}
 		}
