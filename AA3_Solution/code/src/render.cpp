@@ -17,7 +17,7 @@
 //variables to load an object:
 
 #define PI  3.141592658
-#define nExercises 17
+#define nExercises 7
 const glm::vec4 DARKBLUE = glm::vec4(100 / 255.f, 120 / 255.f, 200 / 255.f, 0);
 
 namespace sun {
@@ -54,7 +54,7 @@ namespace globalVariables {
 	bool models = true;
 	bool pressed = false;
 	int bulbState = 0;
-	int toonShading = 3;
+	int toonShading = 0;
 	int contourShading = 0;
 	glm::vec4 modelColor;
 	float lastTime=0;
@@ -163,8 +163,6 @@ float temp3 = 0;
 
 bool light_moves = true;
 
-float aux[3]{ 0 };
-
 void GUI() {
 	bool show = true;
 	ImGui::Begin("Simulation Parameters", &show, 0);
@@ -175,12 +173,14 @@ void GUI() {
 
 		ImGui::Text("Current Exercise: %d", GV::exCounter);
 
-		ImGui::InputFloat3("temp", aux);
-
 		switch (GV::exCounter) {
 		case 1: //solo pinta noria de cubos
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tA set of cubes whose movement resembles the one of a wheel (noria).");
 			break;
 		case 2: //noria de modelos
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tSame behaviour that the one in the first exercise. \n\tThis time using and rendering 3d meshes to compose an actual wheel.");
 			break;
 		case 3: //noria de modelos + movimientos de cámara
 			switch (GV::cameraCounter) {
@@ -197,6 +197,8 @@ void GUI() {
 				ImGui::Text("Current Camera: Rotating God's Eye Shot");
 				break;
 			}
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tIn this exercise you can change the camera position by pressing the C key. \n\tEverything else remains the same as in the last exercise.");
 			break;
 		case 4: //noria de modelos + fuentes de luz
 			if (light_moves)
@@ -211,6 +213,15 @@ void GUI() {
 				else if (GV::bulbState == 2)
 					ImGui::Text("B key to Bulb Light: On (Pendulum)");
 			}
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tThis time the wheel is lightened by different light sources. \n\tWe have the Sun and the Moon, whose movement may be stopped by pressing the D key.\n\
+	In this mode the Sun will disappear and the Moon and the dark blue ambient light will be the only ones \n\tlightening the scene.\n\
+	Whenever the night-day cycle is turned off, you can press B to change between the different bulb light illumination modes. \n\ \n\
+	The bulb light consists in a diffuse green light located between trump and the chicken. \n\
+	Its modes are:\n\
+		1.-Static (stays between Trump and Chicken and emits light)\n\
+		2.-Off (doesn't emit light)\n\
+		3.-Pendulum (the bulb oscilates like a pendulum in the plane between Trump and the Chicken, while emmiting light) ");
 			break;
 		case 5: //global scene composition
 			switch (GV::cameraCounter) {
@@ -227,6 +238,11 @@ void GUI() {
 				ImGui::Text("Current Camera: Rotating God's Eye Shot");
 				break;
 			}
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tIn This scene there are two wheel and you can change between camera modes, \n\
+	the same way you could in exercise 3.\n\
+	Whenever the cabin where Trump and the Chicken reaches its wheel's lowest point,\n\
+	both charachters teleport to the other wheel's topmost cabin.");
 			break;
 		case 6: //toon shading exercises
 			if (light_moves)
@@ -242,27 +258,34 @@ void GUI() {
 					ImGui::Text("B key to Bulb Light: On (Pendulum)");
 			}
 			if (GV::toonShading == 0) {
-				ImGui::Text("T key to Toon Shading: Exercise 9 (Only Sun)");
+				ImGui::Text("T key to Toon Shading: Exercise 9 (1 - Only Sun)");
 			}
 			else if (GV::toonShading == 1) {
-				ImGui::Text("T key to Toon Shading: Exercise 10 (Sun and Moon)");
+				ImGui::Text("T key to Toon Shading: Exercise 10 (2 - Sun and Moon)");
 			}
 			else if (GV::toonShading == 2) {
-				ImGui::Text("T key to Toon Shading: Exercise 11 (Night Illumination and Bulb Light)");
+				ImGui::Text("T key to Toon Shading: Exercise 11 (3 - Night Illumination and Bulb Light)");
 			}
 			else if (GV::toonShading == 3) {
-				ImGui::Text("T key to Toon Shading: Exercise 9 , 10 and 11 (Toon Shading Off)");
+				ImGui::Text("T key to Toon Shading: Exercise 9 , 10 and 11 (4 - Toon Shading Off)");
 			}
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tKeeping the day-night and bulb options you had in exercise 4,\n\
+	in this exercise you can also press T to change between the different shading modes:\n\
+\n\		1.-Toon Shading with only sunlight\n\
+		2.-Toon Shading with both Sun and Moon light\n\
+		3.-Toon Shading with night and bulb illumination\n\
+		4.-Toon Shading Off");
 			break;
 		case 7: //contour shading
 			if (GV::contourShading == 0) {
-				ImGui::Text("T key to Contour Shading: Exercise 12 (Trump Contour)");
+				ImGui::Text("T key to Contour Shading: Exercise 12 (1 - Trump Contour)");
 			}
 			else if (GV::contourShading == 1) {
-				ImGui::Text("T key to Contour Shading: Exercise 13 (Trump Highlight Contour)");
+				ImGui::Text("T key to Contour Shading: Exercise 13 (2 - Trump Highlight Contour)");
 			}
 			else if (GV::contourShading == 2) {
-				ImGui::Text("T key to Contour Shading: Exercise 14 (Thick characters Contour)");
+				ImGui::Text("T key to Contour Shading: Exercise 14 (3 - Thick characters Contour)");
 			}
 			else
 				std::cout << "algo va mal" << std::endl;
@@ -280,6 +303,13 @@ void GUI() {
 				ImGui::Text("Current Camera: Rotating God's Eye Shot");
 				break;
 			}
+			ImGui::Text("\nDescription: ");
+			ImGui::Text("\tKeeping the camera modes you had on exercise 3, in this exercise you can\n\
+	change between different outlining modes. The modes are:\n\
+		1.-Trump Black Outline\n\
+		2.-Trump Yellow Outline\n\
+		3.-Characters thick otline and wheel thin outline.\n\ ");
+			break;
 		}
 	}
 	// .........................
@@ -486,8 +516,10 @@ void GLinit(int width, int height) {
 void GLcleanup() {
 	/*Box::cleanupCube();
 	Axis::cleanupAxis();*/
-	MyLoadedModel::cleanupModel(0);
-	MyLoadedModel::cleanupModel(1);
+	for (int i = 0; i < 10; ++i)
+	{
+		MyLoadedModel::cleanupModel(i);
+	}
 	Sphere::cleanupSphere();
 	Cube::cleanupCube();
 
@@ -706,17 +738,21 @@ void GLrender(double currentTime) {
 		}
 
 		//DRAW
-		if (light_moves) { //sol
+		if (GV::toonShading == 0 || GV::toonShading == 1 || GV::toonShading == 3) {
 			Sphere::updateSphere(sun::pos, 1.f);
 			Sphere::drawSphere();
 		}
-		else if (GV::bulbState == 0 || GV::bulbState == 2) { //bulb
+		
+		if (GV::toonShading == 2) {
 			Sphere::updateSphere(bulb::pos, .25f);
 			Sphere::drawSphere();
 		}
+		
 		//luna
-		Sphere::updateSphere(moon::pos, 1.f);
-		Sphere::drawSphere();
+		if (GV::toonShading == 1 || GV::toonShading == 2 || GV::toonShading == 3) {
+			Sphere::updateSphere(moon::pos, 1.f);
+			Sphere::drawSphere();
+		}
 
 
 		//modelos
