@@ -308,7 +308,7 @@ void GUI() {
 	change between different outlining modes. The modes are:\n\
 		1.-Trump Black Outline\n\
 		2.-Trump Yellow Outline\n\
-		3.-Characters thick outline and wheel thin outline.\n\ ");
+		3.-Characters thick otline and wheel thin outline.\n\ ");
 			break;
 		}
 	}
@@ -829,6 +829,13 @@ void GLrender(double currentTime) {
 		glEnable(GL_STENCIL_TEST);
 		glEnable(GL_DEPTH_TEST);
 		glStencilOp(GL_KEEP, GL_KEEP, GL_REPLACE);
+		if (GV::contourShading == 0) {//ONLY TRUMP
+			glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
+			MyLoadedModel::drawModel(3);
+			MyLoadedModel::drawModel(4);
+			for (int i = 0; i < shaders::nCabinas; ++i)
+				MyLoadedModel::drawModel(2, i);
+			MyLoadedModel::drawModel(1);
 
 		glStencilMask(0x00); // make sure we don't update the stencil buffer while drawing the floor
 		if (GV::contourShading != 2) {
@@ -869,6 +876,14 @@ void GLrender(double currentTime) {
 		}
 		MyLoadedModel::drawModel(5);
 		glStencilMask(0xFF);
+
+			glStencilFunc(GL_NOTEQUAL, 1, 0xFF);
+			glStencilMask(0x00);
+			glDisable(GL_DEPTH_TEST);
+			contourTrump::color = { 1, 1, 0, 0 };
+			MyLoadedModel::drawModel(5);
+			glStencilMask(0xFF);
+		}
 
 		glEnable(GL_DEPTH_TEST);
 		glDisable(GL_STENCIL_TEST);
@@ -2813,6 +2828,7 @@ void main() {\n\
 						MyLoadedModel::updateModel(contourGallina, 6);
 						//GALLINA
 						MyLoadedModel::updateModel(myObjMat, 1);
+						glm::mat4 contourGallina;
 						if (GV::contourShading != 2) {
 							contourGallina = glm::translate(myObjMat, glm::vec3(0, -.1, 0));
 							contourGallina = glm::scale(myObjMat, glm::vec3(1.05f));
